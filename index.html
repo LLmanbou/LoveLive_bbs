@@ -1,0 +1,3153 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ラブライバー集会場！シリーズ別掲示板（リアルタイム同期・PWA完全版）</title>
+    <!-- PWA（ホーム画面アプリ化・全画面起動）用メタタグ -->
+    <meta id="meta_theme_color" name="theme-color" content="#e4007f">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ラブライバー掲示板">
+    <link id="apple_touch_icon" rel="apple-touch-icon" href="">
+    <link id="pwa_manifest" rel="manifest" href="">
+    <style>
+        :root {
+            --theme-color: #e4007f;
+            --theme-text: #ffffff;
+            --theme-bg: #fff5f8;
+            --theme-border: #f3c6d8;
+            --theme-badge-bg: #ffe0ef;
+            --theme-badge-text: #c2006b;
+
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-sub: #666666;
+            --input-bg: #ffffff;
+            --input-border: #cccccc;
+            --soft-box-bg: #fafafa;
+        }
+        body.dark-mode {
+            --card-bg: #1f2128;
+            --text-main: #eceef2;
+            --text-sub: #a3a8b8;
+            --input-bg: #2a2d37;
+            --input-border: #444857;
+            --soft-box-bg: #262932;
+            background-color: #14161b !important;
+            color: var(--text-main);
+        }
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            background-color: var(--theme-bg);
+            color: var(--text-main);
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 20px;
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+        .header-top {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 3px solid var(--theme-color);
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+        h1 {
+            color: var(--theme-color);
+            margin: 0;
+            font-size: 1.55em;
+        }
+        .header-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+        .sync-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.78em;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            color: #389e0d;
+        }
+        .sync-badge.offline {
+            background: #fffbe6;
+            border-color: #ffe58f;
+            color: #ad6800;
+        }
+        .sync-badge.error {
+            background: #fff2f0;
+            border-color: #ffccc7;
+            color: #cf1322;
+        }
+        .dark-toggle-btn {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--theme-border);
+            border-radius: 20px;
+            padding: 4px 11px;
+            font-size: 0.82em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .theme-switcher {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--card-bg);
+            border: 2px solid var(--theme-color);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: var(--theme-badge-text);
+        }
+        .theme-switcher select {
+            border: none;
+            background: transparent;
+            font-weight: bold;
+            color: var(--text-main);
+            padding: 2px 4px;
+            width: auto;
+            cursor: pointer;
+            outline: none;
+        }
+        body.dark-mode .theme-switcher select option {
+            background: #1f2128;
+            color: #eceef2;
+        }
+        .box {
+            background: var(--card-bg);
+            border: 1px solid var(--theme-border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .accordion-toggle-btn {
+            width: 100%;
+            background-color: var(--theme-color);
+            color: var(--theme-text);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            transition: filter 0.15s ease;
+        }
+        .accordion-toggle-btn:hover {
+            filter: brightness(0.93);
+        }
+        .accordion-toggle-btn.sub-toggle {
+            background-color: var(--card-bg);
+            color: var(--theme-badge-text);
+            border: 1px solid var(--theme-border);
+            font-size: 0.9em;
+            padding: 9px 14px;
+            box-shadow: none;
+        }
+        .msg {
+            background: #e6f4ff;
+            border-left: 5px solid #1890ff;
+            color: #003a8c;
+            padding: 10px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: none;
+            border-radius: 4px;
+        }
+        .msg.error {
+            background: #fff2f0;
+            border-left-color: #ff4d4f;
+            color: #cf1322;
+        }
+        .unread-banner {
+            background: linear-gradient(90deg, var(--theme-badge-bg), var(--card-bg));
+            border: 1px solid var(--theme-color);
+            border-radius: 8px;
+            padding: 8px 14px;
+            margin-bottom: 14px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 0.88em;
+            font-weight: bold;
+        }
+        .new-badge {
+            background: #ff4d4f;
+            color: #ffffff;
+            font-size: 0.72em;
+            font-weight: bold;
+            padding: 1px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            animation: pulseNew 1.8s infinite;
+        }
+        @keyframes pulseNew {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.65; }
+        }
+        .pinned-section {
+            background: linear-gradient(135deg, rgba(24, 144, 255, 0.08), var(--card-bg));
+            border: 2px solid #1890ff;
+            border-radius: 10px;
+            padding: 13px 15px;
+            margin-bottom: 18px;
+            display: none;
+        }
+        .pinned-title {
+            margin: 0 0 10px 0;
+            color: #1890ff;
+            font-size: 1.05em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .pinned-badge {
+            background: #1890ff;
+            color: #ffffff;
+            font-size: 0.78em;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .form-row {
+            margin-bottom: 10px;
+        }
+        .oshi-picker-box {
+            background: var(--soft-box-bg);
+            border: 1px solid var(--theme-border);
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 10px;
+        }
+        .oshi-picker-top {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .oshi-picker-limit {
+            font-size: 0.78em;
+            color: var(--theme-badge-text);
+            font-weight: bold;
+        }
+        .oshi-selected-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .oshi-chip-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 14px;
+            font-size: 0.8em;
+            font-weight: bold;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+        }
+        .oshi-chip-remove {
+            background: rgba(0, 0, 0, 0.22);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 11px;
+            line-height: 14px;
+            padding: 0;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .oshi-badges-group {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px;
+        }
+        .w-oshi-tag {
+            background: #fff0f6;
+            border: 1px solid #ffadd2;
+            color: #c41d7f;
+            font-size: 0.72em;
+            font-weight: bold;
+            padding: 1px 6px;
+            border-radius: 8px;
+        }
+        .tag-selector-box {
+            background: var(--soft-box-bg);
+            border: 1px solid var(--theme-border);
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 10px;
+        }
+        .tag-chip-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .tag-select-chip {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--theme-border);
+            border-radius: 14px;
+            padding: 3px 10px;
+            font-size: 0.8em;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.12s ease;
+        }
+        .tag-select-chip.selected {
+            background: var(--theme-color);
+            color: var(--theme-text);
+            border-color: var(--theme-color);
+            font-weight: bold;
+        }
+        .post-tags-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 6px;
+        }
+        .post-tag-pill {
+            background: var(--theme-badge-bg);
+            color: var(--theme-badge-text);
+            border: 1px solid var(--theme-border);
+            border-radius: 12px;
+            padding: 1px 8px;
+            font-size: 0.78em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .post-tag-pill:hover {
+            filter: brightness(0.94);
+        }
+        .draft-status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78em;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+        }
+        input[type="text"], input[type="password"], input[type="number"], select, textarea {
+            padding: 8px;
+            background: var(--input-bg);
+            color: var(--text-main);
+            border: 1px solid var(--input-border);
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 85px;
+            resize: vertical;
+        }
+        .btn {
+            background-color: var(--theme-color);
+            color: var(--theme-text);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            transition: filter 0.15s ease;
+        }
+        .btn:hover {
+            filter: brightness(0.9);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-sub {
+            background-color: #666;
+            color: #ffffff;
+        }
+        .btn-sub:hover {
+            background-color: #444;
+            filter: none;
+        }
+        .cooldown-hint {
+            font-size: 0.82em;
+            color: #ad6800;
+            background: #fffbe6;
+            border: 1px solid #ffe58f;
+            border-radius: 4px;
+            padding: 6px 10px;
+            margin-bottom: 10px;
+            display: none;
+        }
+        .image-upload-box {
+            background: var(--soft-box-bg);
+            border: 1px dashed var(--theme-color);
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+        .image-upload-label {
+            font-weight: bold;
+            color: var(--theme-badge-text);
+            cursor: pointer;
+        }
+        .image-preview-wrap {
+            margin-top: 8px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        .image-preview-wrap img {
+            max-width: 160px;
+            max-height: 120px;
+            border-radius: 6px;
+            border: 1px solid var(--theme-border);
+            object-fit: cover;
+        }
+        .clear-file-btn {
+            background: var(--card-bg);
+            border: 1px solid #999;
+            color: var(--text-sub);
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+        .post-image-wrap {
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+        .post-image-wrap img {
+            max-width: 100%;
+            max-height: 360px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            cursor: zoom-in;
+            display: block;
+        }
+        .spoiler-controls {
+            background: rgba(250, 173, 20, 0.1);
+            border: 1px dashed #faad14;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+        .spoiler-controls-top {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .spoiler-check-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: bold;
+            color: #d48806;
+            cursor: pointer;
+        }
+        .spoiler-tag-btn {
+            background: var(--card-bg);
+            border: 1px solid #d48806;
+            color: #d48806;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 0.85em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .spoiler-label-input {
+            margin-top: 8px;
+            display: none;
+        }
+        details.spoiler-box {
+            background: rgba(250, 173, 20, 0.12);
+            border: 1px solid #ffe58f;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+        }
+        details.spoiler-box summary {
+            cursor: pointer;
+            font-weight: bold;
+            color: #d48806;
+            user-select: none;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        details.spoiler-box summary::-webkit-details-marker {
+            display: none;
+        }
+        details.spoiler-box summary::after {
+            content: "▼ クリックして開く";
+            font-size: 0.8em;
+            background: #faad14;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: auto;
+        }
+        details.spoiler-box[open] summary::after {
+            content: "▲ 閉じる";
+            background: #8c8c8c;
+        }
+        details.spoiler-box[open] summary {
+            border-bottom: 1px dashed #ffe58f;
+            padding-bottom: 6px;
+            margin-bottom: 8px;
+        }
+        details.reported-box {
+            background: rgba(255, 77, 79, 0.08);
+            border: 1px dashed #ff7875;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+        }
+        details.reported-box summary {
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #cf1322;
+        }
+        .inline-spoiler {
+            background-color: #333;
+            color: transparent;
+            border-radius: 4px;
+            padding: 1px 6px;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .inline-spoiler::before {
+            content: "🙈ネタバレ ";
+            color: #ffd666;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .inline-spoiler.revealed {
+            background-color: #fff1b8;
+            color: #333;
+            user-select: text;
+        }
+        .inline-spoiler.revealed::before {
+            content: "";
+        }
+        .inline-spoiler-locked {
+            background-color: #222;
+            color: #ffd666;
+            border-radius: 4px;
+            padding: 1px 8px;
+            font-size: 0.85em;
+            font-weight: bold;
+            user-select: none;
+        }
+        .pickup-section {
+            background: linear-gradient(135deg, rgba(250, 219, 20, 0.14) 0%, var(--card-bg) 100%);
+            border: 2px solid #fadb14;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 24px;
+            box-shadow: 0 3px 8px rgba(250, 173, 20, 0.15);
+            display: none;
+        }
+        .pickup-title {
+            margin: 0 0 12px 0;
+            color: #d48806;
+            font-size: 1.15em;
+        }
+        .pickup-card {
+            background: var(--card-bg);
+            border: 1px solid #ffe58f;
+            border-radius: 6px;
+            padding: 10px 14px;
+            margin-bottom: 10px;
+        }
+        .pickup-card:last-child {
+            margin-bottom: 0;
+        }
+        .rank-badge {
+            font-weight: bold;
+            font-size: 0.9em;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: #fffbe6;
+            border: 1px solid #ffe58f;
+            color: #ad6800;
+        }
+        .jump-link {
+            font-size: 0.8em;
+            color: #d48806;
+            text-decoration: underline;
+            margin-left: auto;
+            cursor: pointer;
+        }
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 15px;
+        }
+        .tab {
+            padding: 6px 12px;
+            background: var(--card-bg);
+            border: 1px solid var(--theme-color);
+            color: var(--theme-badge-text);
+            border-radius: 20px;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        .tab.active {
+            background: var(--theme-color);
+            color: var(--theme-text);
+            font-weight: bold;
+        }
+        .search-box {
+            background: var(--card-bg);
+            border: 1px solid var(--theme-border);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .search-box input[type="text"] {
+            flex: 2;
+            min-width: 160px;
+        }
+        .search-box select {
+            flex: 1.3;
+            min-width: 140px;
+        }
+        .search-actions {
+            display: flex;
+            gap: 6px;
+        }
+        .quick-filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .toggle-pill-btn {
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 0.88em;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .spoiler-toggle-btn {
+            border: 2px solid #faad14;
+            background: var(--card-bg);
+            color: #d48806;
+        }
+        .spoiler-toggle-btn.active {
+            background: #faad14;
+            color: #fff;
+        }
+        .image-toggle-btn {
+            border: 2px solid #1890ff;
+            background: var(--card-bg);
+            color: #1890ff;
+        }
+        .image-toggle-btn.active {
+            background: #1890ff;
+            color: #fff;
+        }
+        .spoiler-hidden-note {
+            font-size: 0.85em;
+            color: #d48806;
+            font-weight: bold;
+        }
+        .list-meta {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+            color: var(--text-sub);
+            margin-bottom: 12px;
+        }
+        .search-status {
+            color: var(--theme-badge-text);
+            font-weight: bold;
+        }
+        .post-card {
+            background: var(--card-bg);
+            border: 1px solid var(--theme-border);
+            border-left: 5px solid var(--theme-color);
+            border-radius: 6px;
+            padding: 12px 15px;
+            margin-bottom: 12px;
+        }
+        .post-header {
+            font-size: 0.9em;
+            color: var(--text-sub);
+            margin-bottom: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+        .badge {
+            background: var(--theme-badge-bg);
+            color: var(--theme-badge-text);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+        .oshi-badge {
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.82em;
+            font-weight: bold;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .reply-badge {
+            background: #eef6ff;
+            color: #0066cc;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.88em;
+            display: inline-block;
+            margin-bottom: 6px;
+            text-decoration: none;
+            border: 1px solid #bae0ff;
+        }
+        .post-comment {
+            white-space: pre-wrap;
+            line-height: 1.55;
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+        .post-footer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .post-footer-left {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+        .post-footer-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+        .replies-toggle-btn {
+            background: var(--soft-box-bg);
+            border: 1px solid var(--theme-border);
+            color: var(--theme-badge-text);
+            border-radius: 16px;
+            padding: 3px 11px;
+            font-size: 0.82em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .replies-thread-box {
+            margin-top: 10px;
+            padding: 10px 12px;
+            background: var(--soft-box-bg);
+            border-left: 3px solid var(--theme-color);
+            border-radius: 0 6px 6px 0;
+            display: none;
+        }
+        .reply-tree-item {
+            padding: 7px 0;
+            border-bottom: 1px dashed var(--theme-border);
+            font-size: 0.9em;
+        }
+        .reply-tree-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .report-btn {
+            background: transparent;
+            border: 1px solid #ccc;
+            color: var(--text-sub);
+            border-radius: 14px;
+            padding: 3px 9px;
+            font-size: 0.78em;
+            cursor: pointer;
+        }
+        .report-btn.reported {
+            border-color: #ff7875;
+            color: #cf1322;
+            background: rgba(255, 77, 79, 0.08);
+        }
+        .like-btn {
+            background: var(--theme-badge-bg);
+            border: 1px solid var(--theme-border);
+            color: var(--theme-badge-text);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.85em;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            user-select: none;
+        }
+        .like-btn:hover {
+            filter: brightness(0.95);
+        }
+        .like-btn.liked {
+            background: var(--theme-color);
+            color: var(--theme-text);
+            border-color: var(--theme-color);
+        }
+        .reply-link {
+            font-size: 0.8em;
+            color: var(--theme-badge-text);
+            cursor: pointer;
+            text-decoration: underline;
+            margin-left: auto;
+        }
+        /* リプライ先ホバー・タッププレビューポップアップ */
+        .reply-preview-tooltip {
+            position: fixed;
+            z-index: 9999;
+            max-width: 340px;
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 2px solid var(--theme-color);
+            border-radius: 8px;
+            padding: 10px 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+            font-size: 0.86em;
+            display: none;
+            pointer-events: none;
+        }
+        .pagination {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            margin-top: 24px;
+            margin-bottom: 20px;
+        }
+        .page-link {
+            padding: 7px 13px;
+            background: var(--card-bg);
+            border: 1px solid var(--theme-border);
+            color: var(--theme-badge-text);
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+        .page-link.active {
+            background: var(--theme-color);
+            border-color: var(--theme-color);
+            color: var(--theme-text);
+        }
+        .page-link.disabled {
+            opacity: 0.45;
+            pointer-events: none;
+        }
+        .flex-forms {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .admin-hint {
+            font-size: 0.78em;
+            color: var(--text-sub);
+            margin-top: 6px;
+        }
+        .backup-bar {
+            background: var(--soft-box-bg);
+            border: 1px solid var(--theme-border);
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-top: 20px;
+            font-size: 0.88em;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        @media (max-width: 680px) {
+            body { padding: 14px; }
+            .flex-forms { grid-template-columns: 1fr; }
+            .search-box { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-top">
+        <h1>🎀 ラブライバー集会場！掲示板</h1>
+        <div class="header-controls">
+            <span id="sync_status_badge" class="sync-badge offline">⏳ 接続確認中...</span>
+            <button type="button" id="dark_mode_btn" class="dark-toggle-btn" title="ダークモード切り替え">🌙 ダーク</button>
+            <label class="theme-switcher" title="画面全体のテーマカラーをグループカラーまたは推し色に変更">
+                <span>🎨 推し色：</span>
+                <select id="theme_oshi_select"></select>
+            </label>
+        </div>
+    </div>
+    <p style="margin-top: 4px; margin-bottom: 14px; font-size: 0.92em;">推しへの愛、ライブの感想、聖地巡礼レポなど自由に語ろう！</p>
+
+    <div id="msg_box" class="msg"></div>
+
+    <!-- 未読・新着案内バー -->
+    <div id="unread_banner" class="unread-banner">
+        <span id="unread_banner_text">✨ 前回のアクセス以降に新しい投稿があります！</span>
+        <div style="display: flex; gap: 6px;">
+            <button type="button" id="jump_unread_btn" class="btn" style="padding: 4px 10px; font-size: 0.85em;">新着を見る</button>
+            <button type="button" id="mark_read_btn" class="clear-file-btn">既読にする</button>
+        </div>
+    </div>
+
+    <!-- 新規投稿・編集フォーム（開閉ボタン付き） -->
+    <button type="button" id="toggle_post_form_btn" class="accordion-toggle-btn">
+        <span>📝 新規投稿フォームを開く</span>
+        <span id="toggle_post_form_icon">▼</span>
+    </button>
+
+    <div id="post_form_wrapper" class="box" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h3 id="form_title" style="margin: 0;">📝 新規投稿 / リプライ</h3>
+            <span id="draft_status_text" style="font-size: 0.78em; color: var(--text-sub);">💾 下書き自動保存 ON</span>
+        </div>
+
+        <form id="post_form">
+            <input type="hidden" id="edit_target_id" value="">
+
+            <div class="form-row">
+                <label style="font-size: 0.85em; font-weight: bold;">シリーズ・カテゴリ：</label>
+                <select id="category_select"></select>
+            </div>
+
+            <!-- 推しバッジ選択（最大2つ / W推し対応） -->
+            <div class="oshi-picker-box">
+                <div class="oshi-picker-top">
+                    <label for="oshi_select" style="font-size: 0.85em; font-weight: bold;">
+                        💖 推しメンバー・箱推しバッジ（最大2つ・W推し対応）：
+                    </label>
+                    <span id="oshi_selection_count" class="oshi-picker-limit">選択中：0 / 2 個</span>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <select id="oshi_select" style="flex: 1;"></select>
+                    <button type="button" id="clear_oshi_btn" class="clear-file-btn" style="display: none;">すべて解除</button>
+                </div>
+                <div id="selected_oshi_chips" class="oshi-selected-chips"></div>
+            </div>
+
+            <!-- 定型ハッシュタグ選択（複数選択可） -->
+            <div class="tag-selector-box">
+                <div style="font-size: 0.85em; font-weight: bold;">🏷️ 話題タグ（任意・複数選択可）：</div>
+                <div id="preset_tag_chips" class="tag-chip-list"></div>
+            </div>
+
+            <div class="form-row" style="display: flex; gap: 10px;">
+                <div style="flex: 2;">
+                    <input type="text" id="name_input" placeholder="名前（例：海未推しライバー）" required>
+                </div>
+                <div style="flex: 1;">
+                    <input type="number" id="reply_to_input" placeholder="リプ先番号（任意）">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <textarea id="comment_input" placeholder="コメントを入力（改行も反映されます・入力内容は自動で下書き保存されます）" required></textarea>
+            </div>
+
+            <!-- 画像添付エリア -->
+            <div class="image-upload-box">
+                <div style="margin-bottom: 6px;">
+                    <label for="image_input" class="image-upload-label">
+                        📷 写真・画像を添付（任意 / JPG・PNG・GIF・WEBP）
+                    </label>
+                </div>
+                <input type="file" id="image_input" accept="image/jpeg,image/png,image/gif,image/webp">
+
+                <div id="image_preview_wrap" class="image-preview-wrap">
+                    <img id="image_preview_img" src="" alt="選択画像のプレビュー">
+                    <button type="button" id="clear_image_btn" class="clear-file-btn">選択を取り消す</button>
+                </div>
+
+                <div id="existing_image_wrap" style="display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--theme-border);">
+                    <div style="font-size: 0.85em; color: var(--text-sub); margin-bottom: 4px;">現在添付されている画像：</div>
+                    <img id="existing_image_img" src="" alt="現在の添付画像" style="max-width: 140px; max-height: 100px; border-radius: 4px; display: block; margin-bottom: 4px;">
+                    <label style="font-size: 0.85em; color: #cf1322; cursor: pointer;">
+                        <input type="checkbox" id="remove_image_cb"> この添付画像を削除する
+                    </label>
+                </div>
+            </div>
+
+            <!-- ネタバレ防止（スポイラー）設定 -->
+            <div class="spoiler-controls">
+                <div class="spoiler-controls-top">
+                    <label class="spoiler-check-label">
+                        <input type="checkbox" id="is_spoiler_cb">
+                        ⚠️ 投稿全体をネタバレ折りたたみ（クリックで開く）にする
+                    </label>
+                    <button type="button" id="wrap_spoiler_btn" class="spoiler-tag-btn">
+                        🙈 一部だけ伏せ字にする ([spoiler])
+                    </button>
+                </div>
+                <div id="spoiler_label_box" class="spoiler-label-input">
+                    <input type="text" id="spoiler_label_input" placeholder="ネタバレの注意書きタイトル（例：〇〇ライブDay1セトリネタバレ注意！）">
+                </div>
+            </div>
+
+            <!-- 連投防止クールタイム案内 -->
+            <div id="cooldown_hint" class="cooldown-hint"></div>
+
+            <div class="form-row" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="password" id="pass_input" placeholder="編集・削除用パスワード（任意）" style="flex: 1; min-width: 180px;">
+                <button type="button" id="clear_draft_btn" class="btn btn-sub">下書きクリア</button>
+                <button type="submit" id="submit_btn" class="btn">投稿する</button>
+                <button type="button" id="cancel_edit_btn" class="btn btn-sub" style="display: none;">キャンセル</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 管理者ピン留め（固定表示）セクション -->
+    <div id="pinned_section" class="pinned-section">
+        <h3 class="pinned-title">📌 固定・お知らせ投稿</h3>
+        <div id="pinned_list"></div>
+    </div>
+
+    <!-- 人気の投稿ピックアップ（尊い！トップ3） -->
+    <div id="pickup_section" class="pickup-section">
+        <h3 class="pickup-title">👑 人気の投稿ピックアップ（尊い！TOP3）</h3>
+        <div id="pickup_list"></div>
+    </div>
+
+    <!-- カテゴリ絞り込みタブ -->
+    <h2 id="list-top">💬 投稿一覧（新着順）</h2>
+    <div id="category_tabs" class="tabs"></div>
+
+    <!-- キーワード・推しメンバー・タグ検索フォーム -->
+    <form id="search_form" class="search-box">
+        <input type="text" id="search_q_input" placeholder="🔍 キーワード検索（名前・本文・推し名）">
+        <select id="search_oshi_select"></select>
+        <select id="search_tag_select"></select>
+        <div class="search-actions">
+            <button type="submit" class="btn">検索</button>
+            <button type="button" id="clear_search_btn" class="btn btn-sub" style="display: none;">解除</button>
+        </div>
+    </form>
+
+    <!-- クイックトグルフィルターバー -->
+    <div class="quick-filter-bar">
+        <button type="button" id="spoiler_toggle_btn" class="toggle-pill-btn spoiler-toggle-btn">
+            🛡️ ネタバレ回避モード：OFF（隠す）
+        </button>
+        <button type="button" id="image_toggle_btn" class="toggle-pill-btn image-toggle-btn">
+            📷 画像付き投稿のみ：OFF（写真だけ表示）
+        </button>
+        <span id="spoiler_hidden_note" class="spoiler-hidden-note" style="display: none;"></span>
+    </div>
+
+    <!-- 件数・ページ情報 -->
+    <div class="list-meta">
+        <div id="list_count_info">読み込み中...</div>
+        <div id="search_status_info" class="search-status"></div>
+    </div>
+
+    <!-- 投稿リスト -->
+    <div id="posts_container"></div>
+
+    <!-- ページネーション -->
+    <nav id="pagination_nav" class="pagination" aria-label="ページ送り"></nav>
+
+    <hr style="border: 0; border-top: 1px solid var(--theme-border); margin: 20px 0;">
+
+    <!-- 削除・編集・ピン留め指定フォーム（折りたたみ式） -->
+    <button type="button" id="toggle_manage_form_btn" class="accordion-toggle-btn sub-toggle">
+        <span>🗑️ 投稿の削除・🔧 編集・📌 ピン留めメニューを開く</span>
+        <span id="toggle_manage_form_icon">▼</span>
+    </button>
+
+    <div id="manage_form_wrapper" class="flex-forms" style="display: none;">
+        <div class="box">
+            <h4 style="margin-top: 0;">🗑️ 投稿削除</h4>
+            <form id="delete_form">
+                <div class="form-row"><input type="number" id="delete_id_input" placeholder="削除対象番号" required></div>
+                <div class="form-row"><input type="password" id="delete_pass_input" placeholder="投稿パスワード / 管理者パス" required></div>
+                <button type="submit" class="btn btn-sub">削除</button>
+            </form>
+            <div class="admin-hint">※ 管理者マスターパスワードでも削除可。</div>
+        </div>
+
+        <div class="box">
+            <h4 style="margin-top: 0;">🔧 投稿編集</h4>
+            <form id="edit_load_form">
+                <div class="form-row"><input type="number" id="edit_id_input" placeholder="編集対象番号" required></div>
+                <div class="form-row"><input type="password" id="edit_pass_input" placeholder="投稿パスワード / 管理者パス" required></div>
+                <button type="submit" class="btn btn-sub">編集呼出</button>
+            </form>
+            <div class="admin-hint">※ 管理者マスターパスワードでも編集可。</div>
+        </div>
+
+        <div class="box">
+            <h4 style="margin-top: 0;">📌 管理者ピン留め</h4>
+            <form id="pin_form">
+                <div class="form-row"><input type="number" id="pin_id_input" placeholder="固定/解除する投稿番号" required></div>
+                <div class="form-row"><input type="password" id="pin_pass_input" placeholder="管理者マスターパスワード" required></div>
+                <button type="submit" class="btn btn-sub">固定切替</button>
+            </form>
+            <div class="admin-hint">※ 最上部に固定表示（再実行で解除）。</div>
+        </div>
+    </div>
+
+    <!-- データバックアップ・復元バー -->
+    <div class="backup-bar">
+        <span>💾 データ管理（JSONバックアップ・一括復元）</span>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" id="export_json_btn" class="btn btn-sub" style="font-size: 0.85em; padding: 6px 12px;">JSON書き出し</button>
+            <label class="btn btn-sub" style="font-size: 0.85em; padding: 6px 12px; cursor: pointer;">
+                JSON読み込み
+                <input type="file" id="import_json_input" accept=".json,application/json" style="display: none;">
+            </label>
+        </div>
+    </div>
+
+    <!-- リプライ先プレビュー用ツールチップ -->
+    <div id="reply_preview_tooltip" class="reply-preview-tooltip"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
+        import {
+            getDatabase,
+            ref,
+            onValue,
+            set,
+            update,
+            remove,
+            runTransaction
+        } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-database.js";
+
+        // ============================================================
+        // Firebase プロジェクト設定（lovelivebbs-90ccf）
+        // ============================================================
+        const FIREBASE_CONFIG = {
+            apiKey: "AIzaSyAZPVdKRc7GhNt7BXa3EKFZa2QE2PCqCv8",
+            authDomain: "lovelivebbs-90ccf.firebaseapp.com",
+            databaseURL: "https://lovelivebbs-90ccf-default-rtdb.firebaseio.com",
+            projectId: "lovelivebbs-90ccf",
+            storageBucket: "lovelivebbs-90ccf.firebasestorage.app",
+            messagingSenderId: "519653772130",
+            appId: "1:519653772130:web:9786ecdc11bfc4258d3a3b",
+            measurementId: "G-X1WQFHC7LY"
+        };
+
+        // ============================================================
+        // 管理者用マスターパスワード設定（K_5298）
+        // ============================================================
+        const ADMIN_MASTER_PASSWORD_PLAIN = "K_5298";
+        let adminMasterPasswordHash = "";
+
+        const LOCAL_STORAGE_KEY = 'lovelive_bbs_posts_v1';
+        const THEME_STORAGE_KEY = 'lovelive_bbs_theme_oshi_v1';
+        const DARK_MODE_STORAGE_KEY = 'lovelive_bbs_dark_mode_v1';
+        const COOLDOWN_STORAGE_KEY = 'lovelive_bbs_last_post_ts_v1';
+        const PROFILE_STORAGE_KEY = 'lovelive_bbs_user_profile_v1';
+        const LIKED_IDS_STORAGE_KEY = 'lovelive_bbs_liked_ids_v1';
+        const REPORTED_IDS_STORAGE_KEY = 'lovelive_bbs_reported_ids_v1';
+        const LAST_SEEN_ID_STORAGE_KEY = 'lovelive_bbs_last_seen_id_v1';
+        const DRAFT_STORAGE_KEY = 'lovelive_bbs_draft_v1';
+
+        const POST_COOLDOWN_SEC = 30;
+        const PER_PAGE = 10;
+        const MAX_OSHI_BADGES = 2;
+        const REPORT_HIDE_THRESHOLD = 3; // 通報3件以上で自動折りたたみ
+
+        const PRESET_TAGS = [
+            'ライブ感想',
+            '聖地巡礼',
+            'ガチャ報告',
+            'グッズ・痛バ',
+            '楽曲語り',
+            '生配信・ラジオ',
+            'イラスト・創作',
+            '雑談・交流'
+        ];
+
+        const NG_WORDS = [
+            '死ね', 'しね', '殺す', 'ころす', '消えろ',
+            'キモい', 'きもい', 'バカ', '馬鹿', 'アホ',
+            'クズ', 'ゴミ', 'カス', 'ブス', 'デブ',
+            'ガイジ', '池沼', '障害者',
+            'チケット転売', '高額転売', 'LINE追加',
+            '副業紹介', '稼げる副業', '投資詐欺', 'オンラインカジノ'
+        ];
+
+        function normalizeForNgCheck(str) {
+            return String(str ?? '')
+                .normalize('NFKC')
+                .toLowerCase()
+                .replace(/[\s\u3000・。、．,.!！?？\-_―ー~～]+/g, '');
+        }
+
+        function findMatchedNgWord(...texts) {
+            const combined = texts.map(t => normalizeForNgCheck(t)).join('\n');
+            for (const word of NG_WORDS) {
+                const normWord = normalizeForNgCheck(word);
+                if (normWord && combined.includes(normWord)) {
+                    return word;
+                }
+            }
+            return null;
+        }
+
+        const CATEGORIES = {
+            all: 'すべて表示',
+            muse: "μ's（無印）",
+            aqours: 'Aqours（サンシャイン!!）',
+            niji: '虹ヶ咲学園スクールアイドル同好会',
+            liella: 'Liella!（スーパースター!!）',
+            hasu: '蓮ノ空女学院スクールアイドルクラブ',
+            ikizulive: 'イキヅライブ！ LOVELIVE! BLUEBIRD',
+            other: 'その他・シリーズ横断・ライブ感想'
+        };
+
+        const GROUP_THEMES = {
+            group_muse: { name: "μ's グループカラー", shortName: "μ's推し", bg: '#e4007f', color: '#ffffff' },
+            group_aqours: { name: 'Aqours グループカラー', shortName: 'Aqours推し', bg: '#00a0e9', color: '#ffffff' },
+            group_niji: { name: '虹ヶ咲 グループカラー', shortName: '虹ヶ咲推し', bg: '#f5c400', color: '#333333' },
+            group_liella: { name: 'Liella! グループカラー', shortName: 'Liella!推し', bg: '#9b51e0', color: '#ffffff' },
+            group_hasu: { name: '蓮ノ空 グループカラー', shortName: '蓮ノ空推し', bg: '#e84a7f', color: '#ffffff' },
+            group_ikizulive: { name: 'イキヅライブ！ グループカラー', shortName: 'イキヅライブ推し', bg: '#ff7a00', color: '#ffffff' }
+        };
+
+        const MEMBERS = {
+            none: { name: '選択なし（シリーズ全体箱推し・DD）', bg: '#e0e0e0', color: '#333333', group: 'all' },
+            hako_muse: { name: "μ's箱推し", badgeLabel: "μ's箱推し", bg: '#e4007f', color: '#ffffff', group: 'muse', isGroup: true },
+            hako_aqours: { name: 'Aqours箱推し', badgeLabel: 'Aqours箱推し', bg: '#00a0e9', color: '#ffffff', group: 'aqours', isGroup: true },
+            hako_niji: { name: '虹ヶ咲箱推し', badgeLabel: '虹ヶ咲箱推し', bg: '#f5c400', color: '#333333', group: 'niji', isGroup: true },
+            hako_liella: { name: 'Liella!箱推し', badgeLabel: 'Liella!箱推し', bg: '#9b51e0', color: '#ffffff', group: 'liella', isGroup: true },
+            hako_hasu: { name: '蓮ノ空箱推し', badgeLabel: '蓮ノ空箱推し', bg: '#e84a7f', color: '#ffffff', group: 'hasu', isGroup: true },
+            hako_ikizulive: { name: 'イキヅライブ箱推し', badgeLabel: 'イキヅライブ箱推し', bg: '#ff7a00', color: '#ffffff', group: 'ikizulive', isGroup: true },
+            // μ's
+            honoka: { name: '高坂 穂乃果', bg: '#ffa300', color: '#ffffff', group: 'muse' },
+            eli: { name: '絢瀬 絵里', bg: '#36b3dd', color: '#ffffff', group: 'muse' },
+            kotori: { name: '南 ことり', bg: '#8c9395', color: '#ffffff', group: 'muse' },
+            umi: { name: '園田 海未', bg: '#1769ff', color: '#ffffff', group: 'muse' },
+            rin: { name: '星空 凛', bg: '#f1c40f', color: '#333333', group: 'muse' },
+            maki: { name: '西木野 真姫', bg: '#ff3b30', color: '#ffffff', group: 'muse' },
+            nozomi: { name: '東條 希', bg: '#8e44ad', color: '#ffffff', group: 'muse' },
+            hanayo: { name: '小泉 花陽', bg: '#2ecc71', color: '#ffffff', group: 'muse' },
+            nico: { name: '矢澤 にこ', bg: '#ff69b4', color: '#ffffff', group: 'muse' },
+            // Aqours
+            chika: { name: '高海 千歌', bg: '#ff7900', color: '#ffffff', group: 'aqours' },
+            riko: { name: '桜内 梨子', bg: '#ff99a8', color: '#333333', group: 'aqours' },
+            kanan: { name: '松浦 果南', bg: '#13e8ae', color: '#333333', group: 'aqours' },
+            dia: { name: '黒澤 ダイヤ', bg: '#f23b4c', color: '#ffffff', group: 'aqours' },
+            you: { name: '渡辺 曜', bg: '#49b9f9', color: '#ffffff', group: 'aqours' },
+            yoshiko: { name: '津島 善子', bg: '#898989', color: '#ffffff', group: 'aqours' },
+            hanamaru: { name: '国木田 花丸', bg: '#e6d617', color: '#333333', group: 'aqours' },
+            mari: { name: '小原 鞠莉', bg: '#a530e0', color: '#ffffff', group: 'aqours' },
+            ruby: { name: '黒澤 ルビィ', bg: '#ff69b4', color: '#ffffff', group: 'aqours' },
+            // 虹ヶ咲
+            ayumu: { name: '上原 歩夢', bg: '#ed7d95', color: '#ffffff', group: 'niji' },
+            kasumi: { name: '中須 かすみ', bg: '#e7d600', color: '#333333', group: 'niji' },
+            shizuku: { name: '桜坂 しずく', bg: '#01b7ed', color: '#ffffff', group: 'niji' },
+            karin: { name: '朝香 果林', bg: '#485ec6', color: '#ffffff', group: 'niji' },
+            ai: { name: '宮下 愛', bg: '#ff5800', color: '#ffffff', group: 'niji' },
+            kanata: { name: '近江 彼方', bg: '#a664a0', color: '#ffffff', group: 'niji' },
+            setsuna: { name: '優木 せつ菜', bg: '#d81c2f', color: '#ffffff', group: 'niji' },
+            emma: { name: 'エマ・ヴェルデ', bg: '#84c36e', color: '#ffffff', group: 'niji' },
+            rina: { name: '天王寺 璃奈', bg: '#9ca5b9', color: '#ffffff', group: 'niji' },
+            shioriko: { name: '三船 栞子', bg: '#37b484', color: '#ffffff', group: 'niji' },
+            mia: { name: 'ミア・テイラー', bg: '#d6d5ca', color: '#333333', group: 'niji' },
+            lanzhu: { name: '鐘 嵐珠', bg: '#f8c8c4', color: '#333333', group: 'niji' },
+            yu: { name: '高咲 侑', bg: '#1d1d1d', color: '#ffffff', group: 'niji' },
+            // Liella!
+            kanon: { name: '澁谷 かのん', bg: '#ff7f27', color: '#ffffff', group: 'liella' },
+            keke: { name: '唐 可可', bg: '#a0d8ef', color: '#333333', group: 'liella' },
+            chisato: { name: '嵐 千砂都', bg: '#ff6e90', color: '#ffffff', group: 'liella' },
+            sumire: { name: '平安名 すみれ', bg: '#74f466', color: '#333333', group: 'liella' },
+            ren: { name: '葉月 恋', bg: '#0000a0', color: '#ffffff', group: 'liella' },
+            kinako: { name: '桜小路 きな子', bg: '#fff442', color: '#333333', group: 'liella' },
+            mei: { name: '米女 メイ', bg: '#ff3535', color: '#ffffff', group: 'liella' },
+            shiki: { name: '若菜 四季', bg: '#b2ffdd', color: '#333333', group: 'liella' },
+            natsumi: { name: '鬼塚 夏美', bg: '#ff51c4', color: '#ffffff', group: 'liella' },
+            wien: { name: 'ウィーン・マルガレーテ', bg: '#e49be4', color: '#333333', group: 'liella' },
+            tomari: { name: '鬼塚 冬毬', bg: '#4cd2e2', color: '#333333', group: 'liella' },
+            // 蓮ノ空
+            kaho: { name: '日野下 花帆', bg: '#f8b500', color: '#ffffff', group: 'hasu' },
+            sayaka: { name: '村野 さやか', bg: '#5383c3', color: '#ffffff', group: 'hasu' },
+            kozue: { name: '乙宗 梢', bg: '#68be8d', color: '#ffffff', group: 'hasu' },
+            tsuzuri: { name: '夕霧 綴理', bg: '#ba2636', color: '#ffffff', group: 'hasu' },
+            rurino: { name: '大沢 瑠璃乃', bg: '#e7609e', color: '#ffffff', group: 'hasu' },
+            megumi: { name: '藤島 慈', bg: '#c8c2c6', color: '#333333', group: 'hasu' },
+            ginko: { name: '百生 吟子', bg: '#a2d7dd', color: '#333333', group: 'hasu' },
+            kosuzu: { name: '徒町 小鈴', bg: '#fad764', color: '#333333', group: 'hasu' },
+            hime: { name: '安養寺 姫芽', bg: '#9d8de2', color: '#ffffff', group: 'hasu' },
+            // イキヅライブ！
+            polka: { name: '高橋 ポルカ', bg: '#00a0e9', color: '#ffffff', group: 'ikizulive' },
+            mai: { name: '麻布 麻衣', bg: '#2b547e', color: '#ffffff', group: 'ikizulive' },
+            akira: { name: '五桐 玲', bg: '#43a047', color: '#ffffff', group: 'ikizulive' },
+            hanabi: { name: '駒形 花火', bg: '#e53935', color: '#ffffff', group: 'ikizulive' },
+            miracle: { name: '金澤 奇跡', bg: '#fdd835', color: '#333333', group: 'ikizulive' },
+            noriko: { name: '調布 のりこ', bg: '#ab47bc', color: '#ffffff', group: 'ikizulive' },
+            yukuri: { name: '春宮 ゆくり', bg: '#f48fb1', color: '#333333', group: 'ikizulive' },
+            aurora: { name: '此花 輝夜', bg: '#80deea', color: '#333333', group: 'ikizulive' },
+            midori: { name: '山田 真緑', bg: '#81c784', color: '#333333', group: 'ikizulive' },
+            shion: { name: '佐々木 翔音', bg: '#b0bec5', color: '#333333', group: 'ikizulive' }
+        };
+
+        function loadIdSet(storageKey) {
+            try {
+                const raw = localStorage.getItem(storageKey);
+                const arr = raw ? JSON.parse(raw) : [];
+                return new Set(Array.isArray(arr) ? arr.map(Number) : []);
+            } catch (e) {
+                return new Set();
+            }
+        }
+
+        function saveIdSet(storageKey, setObj) {
+            try {
+                localStorage.setItem(storageKey, JSON.stringify([...setObj]));
+            } catch (e) {}
+        }
+
+        function loadLastSeenId() {
+            try {
+                return Number(localStorage.getItem(LAST_SEEN_ID_STORAGE_KEY) || 0);
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        function saveLastSeenId(maxId) {
+            try {
+                localStorage.setItem(LAST_SEEN_ID_STORAGE_KEY, String(maxId));
+            } catch (e) {}
+        }
+
+        let db = null;
+        let useFirebase = false;
+        let postsCache = [];
+        let cooldownTimerId = null;
+        let initialLastSeenId = loadLastSeenId();
+        let hasRecordedInitialSeen = false;
+
+        let state = {
+            cat: 'all',
+            q: '',
+            oshi: 'all',
+            tag: 'all',
+            hideSpoiler: false,
+            onlyImage: false,
+            page: 1,
+            selectedImageDataUrl: null,
+            selectedOshis: [],
+            selectedTags: [],
+            likedIds: loadIdSet(LIKED_IDS_STORAGE_KEY),
+            reportedIds: loadIdSet(REPORTED_IDS_STORAGE_KEY),
+            expandedReplyIds: new Set()
+        };
+
+        function getOshiBadgeText(info) {
+            return info.badgeLabel || `${info.name}推し`;
+        }
+
+        function getPostOshiKeys(post) {
+            let rawList = [];
+            if (Array.isArray(post?.oshis)) {
+                rawList = post.oshis;
+            } else if (typeof post?.oshis === 'string' && post.oshis) {
+                rawList = post.oshis.split(',');
+            } else if (typeof post?.oshi === 'string' && post.oshi) {
+                rawList = [post.oshi];
+            }
+            const uniqueValid = [];
+            for (const key of rawList) {
+                if (key && key !== 'none' && MEMBERS[key] && !uniqueValid.includes(key)) {
+                    uniqueValid.push(key);
+                    if (uniqueValid.length >= MAX_OSHI_BADGES) break;
+                }
+            }
+            return uniqueValid;
+        }
+
+        function getPostTags(post) {
+            if (Array.isArray(post?.tags)) {
+                return post.tags.filter(t => typeof t === 'string' && t.trim() !== '');
+            }
+            return [];
+        }
+
+        function buildOshiBadgesHtml(post) {
+            const keys = getPostOshiKeys(post);
+            if (keys.length === 0) return '';
+            const badges = keys.map(k => {
+                const info = MEMBERS[k];
+                return `<span class="oshi-badge" style="background-color:${info.bg};color:${info.color};">♥ ${escapeHtml(getOshiBadgeText(info))}</span>`;
+            }).join('');
+            const wTag = keys.length >= 2 ? '<span class="w-oshi-tag">W推し</span>' : '';
+            return `<span class="oshi-badges-group">${badges}${wTag}</span>`;
+        }
+
+        function buildPostTagsHtml(post) {
+            const tags = getPostTags(post);
+            if (tags.length === 0) return '';
+            return `<div class="post-tags-row">${tags.map(t => `<span class="post-tag-pill" data-filter-tag="${escapeHtml(t)}">#${escapeHtml(t)}</span>`).join('')}</div>`;
+        }
+
+        function buildPostBorderStyle(post) {
+            const keys = getPostOshiKeys(post);
+            if (keys.length >= 2) {
+                const c1 = MEMBERS[keys[0]].bg;
+                const c2 = MEMBERS[keys[1]].bg;
+                return `border-image: linear-gradient(180deg, ${c1} 50%, ${c2} 50%) 1;`;
+            }
+            if (keys.length === 1) {
+                return `border-left-color:${MEMBERS[keys[0]].bg};`;
+            }
+            return '';
+        }
+
+        function renderPresetTagChips() {
+            const box = document.getElementById('preset_tag_chips');
+            box.innerHTML = PRESET_TAGS.map(tag => {
+                const active = state.selectedTags.includes(tag) ? 'selected' : '';
+                return `<button type="button" class="tag-select-chip ${active}" data-toggle-tag="${escapeHtml(tag)}">#${escapeHtml(tag)}</button>`;
+            }).join('');
+        }
+
+        function togglePresetTag(tag) {
+            if (state.selectedTags.includes(tag)) {
+                state.selectedTags = state.selectedTags.filter(t => t !== tag);
+            } else {
+                state.selectedTags.push(tag);
+            }
+            renderPresetTagChips();
+            saveDraft();
+        }
+
+        function renderSelectedOshiChips() {
+            const chipsBox = document.getElementById('selected_oshi_chips');
+            const countLabel = document.getElementById('oshi_selection_count');
+            const clearBtn = document.getElementById('clear_oshi_btn');
+            const selectEl = document.getElementById('oshi_select');
+
+            const count = state.selectedOshis.length;
+            const wLabel = count === 2 ? '・W推し！' : '';
+            countLabel.textContent = `選択中：${count} / ${MAX_OSHI_BADGES} 個${wLabel}`;
+            clearBtn.style.display = count > 0 ? 'inline-block' : 'none';
+            selectEl.disabled = count >= MAX_OSHI_BADGES;
+
+            if (count === 0) {
+                chipsBox.innerHTML = '<span style="font-size:0.78em;color:var(--text-sub);">※ プルダウンから1つまたは2つ選ぶとバッジが追加されます（未選択でも投稿可）。</span>';
+                return;
+            }
+
+            chipsBox.innerHTML = state.selectedOshis.map(key => {
+                const info = MEMBERS[key];
+                if (!info) return '';
+                return `
+                    <span class="oshi-chip-item" style="background-color:${info.bg};color:${info.color};">
+                        <span>♥ ${escapeHtml(getOshiBadgeText(info))}</span>
+                        <button type="button" class="oshi-chip-remove" data-remove-oshi="${escapeHtml(key)}" title="このバッジを外す">×</button>
+                    </span>
+                `;
+            }).join('');
+        }
+
+        function handleOshiSelectChange(e) {
+            const val = e.target.value;
+            e.target.value = 'none';
+            if (!val || val === 'none' || !MEMBERS[val]) return;
+
+            if (state.selectedOshis.includes(val)) {
+                showMessage('その推しバッジはすでに選択されています。', true);
+                return;
+            }
+            if (state.selectedOshis.length >= MAX_OSHI_BADGES) {
+                showMessage(`推しバッジは最大 ${MAX_OSHI_BADGES} つまで選べます。外したいバッジの × を押してください。`, true);
+                return;
+            }
+
+            state.selectedOshis.push(val);
+            renderSelectedOshiChips();
+            saveDraft();
+        }
+
+        function removeSelectedOshi(key) {
+            state.selectedOshis = state.selectedOshis.filter(k => k !== key);
+            renderSelectedOshiChips();
+            saveDraft();
+        }
+
+        function clearSelectedOshis() {
+            state.selectedOshis = [];
+            renderSelectedOshiChips();
+            saveDraft();
+        }
+
+        // ============================================================
+        // 下書き自動保存・復元
+        // ============================================================
+        function saveDraft() {
+            if (document.getElementById('edit_target_id').value) return;
+            try {
+                const draft = {
+                    category: document.getElementById('category_select').value,
+                    oshis: state.selectedOshis,
+                    tags: state.selectedTags,
+                    name: document.getElementById('name_input').value,
+                    replyTo: document.getElementById('reply_to_input').value,
+                    comment: document.getElementById('comment_input').value,
+                    isSpoiler: document.getElementById('is_spoiler_cb').checked,
+                    spoilerLabel: document.getElementById('spoiler_label_input').value
+                };
+                localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+                const statusEl = document.getElementById('draft_status_text');
+                if (statusEl) statusEl.textContent = '💾 下書き保存済み';
+            } catch (e) {}
+        }
+
+        function clearDraft(alsoResetInputs = false) {
+            try {
+                localStorage.removeItem(DRAFT_STORAGE_KEY);
+            } catch (e) {}
+            if (alsoResetInputs) {
+                document.getElementById('comment_input').value = '';
+                document.getElementById('reply_to_input').value = '';
+                document.getElementById('is_spoiler_cb').checked = false;
+                document.getElementById('spoiler_label_input').value = '';
+                state.selectedTags = [];
+                renderPresetTagChips();
+                toggleSpoilerLabelInput();
+                clearSelectedImage();
+                showMessage('下書きをクリアしました。');
+            }
+        }
+
+        function restoreDraftOrProfile() {
+            try {
+                const rawDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+                if (rawDraft) {
+                    const d = JSON.parse(rawDraft);
+                    if (d && (d.comment || d.replyTo || (d.tags && d.tags.length > 0) || d.spoilerLabel)) {
+                        if (d.category && CATEGORIES[d.category] && d.category !== 'all') {
+                            document.getElementById('category_select').value = d.category;
+                            filterOshiOptions();
+                        }
+                        if (d.name) document.getElementById('name_input').value = d.name;
+                        if (d.replyTo) document.getElementById('reply_to_input').value = d.replyTo;
+                        if (d.comment) document.getElementById('comment_input').value = d.comment;
+                        if (Array.isArray(d.oshis)) {
+                            state.selectedOshis = d.oshis.filter(k => MEMBERS[k] && k !== 'none').slice(0, MAX_OSHI_BADGES);
+                        }
+                        if (Array.isArray(d.tags)) {
+                            state.selectedTags = d.tags.filter(t => PRESET_TAGS.includes(t));
+                        }
+                        document.getElementById('is_spoiler_cb').checked = Boolean(d.isSpoiler);
+                        document.getElementById('spoiler_label_input').value = d.spoilerLabel || '';
+                        toggleSpoilerLabelInput();
+                        renderSelectedOshiChips();
+                        renderPresetTagChips();
+                        document.getElementById('draft_status_text').textContent = '📝 前回の書きかけ下書きを復元しました';
+                        return;
+                    }
+                }
+            } catch (e) {}
+
+            const prof = loadUserProfile();
+            if (!prof) {
+                state.selectedOshis = [];
+                state.selectedTags = [];
+                renderSelectedOshiChips();
+                renderPresetTagChips();
+                return;
+            }
+            if (prof.name) document.getElementById('name_input').value = prof.name;
+            if (prof.category && CATEGORIES[prof.category] && prof.category !== 'all') {
+                document.getElementById('category_select').value = prof.category;
+                filterOshiOptions();
+            }
+            const savedList = Array.isArray(prof.oshis) ? prof.oshis : (prof.oshi ? [prof.oshi] : []);
+            state.selectedOshis = savedList.filter(k => k && k !== 'none' && MEMBERS[k]).slice(0, MAX_OSHI_BADGES);
+            state.selectedTags = [];
+            renderSelectedOshiChips();
+            renderPresetTagChips();
+        }
+
+        function saveUserProfile(name, category, oshis) {
+            try {
+                const list = Array.isArray(oshis) ? oshis.slice(0, MAX_OSHI_BADGES) : [];
+                localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify({ name, category, oshis: list }));
+            } catch (e) {}
+        }
+
+        function loadUserProfile() {
+            try {
+                const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+                return raw ? JSON.parse(raw) : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // ============================================================
+        // ダークモード切替
+        // ============================================================
+        function applyDarkMode(isDark) {
+            document.body.classList.toggle('dark-mode', isDark);
+            const btn = document.getElementById('dark_mode_btn');
+            if (btn) {
+                btn.textContent = isDark ? '☀️ ライト' : '🌙 ダーク';
+            }
+        }
+
+        function toggleDarkMode() {
+            const next = !document.body.classList.contains('dark-mode');
+            try {
+                localStorage.setItem(DARK_MODE_STORAGE_KEY, next ? '1' : '0');
+            } catch (e) {}
+            applyDarkMode(next);
+        }
+
+        function getRemainingCooldownSec() {
+            try {
+                const lastTs = Number(localStorage.getItem(COOLDOWN_STORAGE_KEY) || 0);
+                if (!lastTs) return 0;
+                const elapsedSec = (Date.now() - lastTs) / 1000;
+                return Math.max(0, Math.ceil(POST_COOLDOWN_SEC - elapsedSec));
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        function recordPostTimestamp() {
+            try {
+                localStorage.setItem(COOLDOWN_STORAGE_KEY, String(Date.now()));
+            } catch (e) {}
+            startCooldownWatcher();
+        }
+
+        function updateCooldownUI() {
+            const submitBtn = document.getElementById('submit_btn');
+            const hintBox = document.getElementById('cooldown_hint');
+            const isEditing = Boolean(document.getElementById('edit_target_id').value);
+
+            if (isEditing) {
+                hintBox.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.textContent = '更新する';
+                return;
+            }
+
+            const remain = getRemainingCooldownSec();
+            if (remain > 0) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = `投稿待機中 (残り ${remain}秒)`;
+                hintBox.textContent = `⏳ 連投スパム防止のため、次の新規投稿まであと ${remain} 秒お待ちください。`;
+                hintBox.style.display = 'block';
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '投稿する';
+                hintBox.style.display = 'none';
+                if (cooldownTimerId) {
+                    clearInterval(cooldownTimerId);
+                    cooldownTimerId = null;
+                }
+            }
+        }
+
+        function startCooldownWatcher() {
+            updateCooldownUI();
+            if (cooldownTimerId) clearInterval(cooldownTimerId);
+            if (getRemainingCooldownSec() > 0) {
+                cooldownTimerId = setInterval(updateCooldownUI, 500);
+            }
+        }
+
+        function updateSyncBadge(status, text) {
+            const badge = document.getElementById('sync_status_badge');
+            badge.className = 'sync-badge' + (status === 'offline' ? ' offline' : status === 'error' ? ' error' : '');
+            badge.textContent = text;
+        }
+
+        function handlePostsLoaded() {
+            const maxId = postsCache.reduce((m, p) => Math.max(m, Number(p.id) || 0), 0);
+            if (!hasRecordedInitialSeen) {
+                hasRecordedInitialSeen = true;
+                if (initialLastSeenId === 0 && maxId > 0) {
+                    initialLastSeenId = maxId;
+                    saveLastSeenId(maxId);
+                }
+            }
+            render();
+        }
+
+        function initFirebaseOrLocal() {
+            const isConfigured = FIREBASE_CONFIG.apiKey &&
+                !FIREBASE_CONFIG.apiKey.startsWith('YOUR_') &&
+                FIREBASE_CONFIG.databaseURL &&
+                !FIREBASE_CONFIG.databaseURL.includes('YOUR_PROJECT_ID');
+
+            if (!isConfigured) {
+                useFirebase = false;
+                postsCache = loadLocalPosts();
+                updateSyncBadge('offline', '💾 ローカル保存モード');
+                handlePostsLoaded();
+                return;
+            }
+
+            try {
+                const app = initializeApp(FIREBASE_CONFIG);
+                db = getDatabase(app);
+                useFirebase = true;
+
+                const postsRef = ref(db, 'bbs_posts');
+                onValue(postsRef, (snapshot) => {
+                    const val = snapshot.val();
+                    if (!val) {
+                        postsCache = [];
+                    } else if (Array.isArray(val)) {
+                        postsCache = val.filter(Boolean);
+                    } else {
+                        postsCache = Object.values(val).filter(Boolean);
+                    }
+                    updateSyncBadge('online', '🟢 リアルタイム同期中');
+                    handlePostsLoaded();
+                }, (error) => {
+                    console.error('Firebase read error:', error);
+                    updateSyncBadge('error', '⚠️ 接続エラー');
+                });
+            } catch (err) {
+                console.error('Firebase init error:', err);
+                useFirebase = false;
+                postsCache = loadLocalPosts();
+                updateSyncBadge('error', '⚠️ Firebase初期化エラー');
+                handlePostsLoaded();
+            }
+        }
+
+        function loadLocalPosts() {
+            try {
+                const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+                const parsed = raw ? JSON.parse(raw) : [];
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function saveLocalPosts(posts) {
+            try {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(posts));
+                return true;
+            } catch (e) {
+                alert('ブラウザの保存容量上限に達しました。');
+                return false;
+            }
+        }
+
+        async function getNextPostId() {
+            if (!useFirebase) {
+                return postsCache.reduce((max, p) => Math.max(max, Number(p.id) || 0), 0) + 1;
+            }
+            const counterRef = ref(db, 'bbs_meta/last_id');
+            const result = await runTransaction(counterRef, (current) => {
+                const fallbackMax = postsCache.reduce((max, p) => Math.max(max, Number(p.id) || 0), 0);
+                const base = Math.max(Number(current) || 0, fallbackMax);
+                return base + 1;
+            });
+            return result.snapshot.val();
+        }
+
+        function setPostFormOpen(isOpen) {
+            const wrapper = document.getElementById('post_form_wrapper');
+            const btn = document.getElementById('toggle_post_form_btn');
+            const icon = document.getElementById('toggle_post_form_icon');
+            const isEditing = Boolean(document.getElementById('edit_target_id').value);
+
+            if (isOpen) {
+                wrapper.style.display = 'block';
+                btn.firstElementChild.textContent = isEditing
+                    ? '✏️ 編集フォームを閉じる'
+                    : '📝 新規投稿フォームを閉じる';
+                icon.textContent = '▲';
+                updateCooldownUI();
+            } else {
+                wrapper.style.display = 'none';
+                btn.firstElementChild.textContent = isEditing
+                    ? '✏️ 編集フォームを開く（編集中）'
+                    : '📝 新規投稿フォームを開く';
+                icon.textContent = '▼';
+            }
+        }
+
+        function togglePostForm() {
+            const wrapper = document.getElementById('post_form_wrapper');
+            setPostFormOpen(wrapper.style.display === 'none');
+        }
+
+        function toggleManageForm() {
+            const wrapper = document.getElementById('manage_form_wrapper');
+            const btn = document.getElementById('toggle_manage_form_btn');
+            const icon = document.getElementById('toggle_manage_form_icon');
+            const isHidden = wrapper.style.display === 'none';
+
+            if (isHidden) {
+                wrapper.style.display = 'grid';
+                btn.firstElementChild.textContent = '🗑️ 投稿の削除・🔧 編集・📌 ピン留めメニューを閉じる';
+                icon.textContent = '▲';
+            } else {
+                wrapper.style.display = 'none';
+                btn.firstElementChild.textContent = '🗑️ 投稿の削除・🔧 編集・📌 ピン留めメニューを開く';
+                icon.textContent = '▼';
+            }
+        }
+
+        function hexToRgb(hex) {
+            const clean = hex.replace('#', '');
+            return {
+                r: parseInt(clean.substring(0, 2), 16),
+                g: parseInt(clean.substring(2, 4), 16),
+                b: parseInt(clean.substring(4, 6), 16)
+            };
+        }
+
+        function mixWithWhite(hex, whiteRatio) {
+            const { r, g, b } = hexToRgb(hex);
+            const nr = Math.round(r + (255 - r) * whiteRatio);
+            const ng = Math.round(g + (255 - g) * whiteRatio);
+            const nb = Math.round(b + (255 - b) * whiteRatio);
+            return `rgb(${nr}, ${ng}, ${nb})`;
+        }
+
+        function darkenHex(hex, factor) {
+            const { r, g, b } = hexToRgb(hex);
+            const nr = Math.round(r * factor);
+            const ng = Math.round(g * factor);
+            const nb = Math.round(b * factor);
+            return `rgb(${nr}, ${ng}, ${nb})`;
+        }
+
+        function updatePWATheme(themeColor, bgColor, iconLabel) {
+            const meta = document.getElementById('meta_theme_color');
+            if (meta) meta.setAttribute('content', themeColor);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+
+            const grad = ctx.createLinearGradient(0, 0, 512, 512);
+            grad.addColorStop(0, mixWithWhite(themeColor, 0.22));
+            grad.addColorStop(1, themeColor);
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 512, 512);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(256, 230, 145, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.font = '150px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🎀', 256, 238);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 44px sans-serif';
+            ctx.fillText(iconLabel, 256, 435);
+
+            const iconDataUrl = canvas.toDataURL('image/png');
+            const appleIcon = document.getElementById('apple_touch_icon');
+            if (appleIcon) appleIcon.href = iconDataUrl;
+
+            const manifest = {
+                name: 'ラブライバー集会場！掲示板',
+                short_name: iconLabel,
+                start_url: location.href,
+                display: 'standalone',
+                background_color: bgColor,
+                theme_color: themeColor,
+                icons: [
+                    {
+                        src: iconDataUrl,
+                        sizes: '512x512',
+                        type: 'image/png',
+                        purpose: 'any maskable'
+                    }
+                ]
+            };
+            const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+            const manifestLink = document.getElementById('pwa_manifest');
+            if (manifestLink) manifestLink.href = URL.createObjectURL(manifestBlob);
+        }
+
+        function applyOshiTheme(themeKey) {
+            const root = document.documentElement;
+            const targetTheme = GROUP_THEMES[themeKey] || (themeKey && themeKey !== 'none' ? MEMBERS[themeKey] : null);
+
+            if (!themeKey || themeKey === 'default' || !targetTheme) {
+                root.style.setProperty('--theme-color', '#e4007f');
+                root.style.setProperty('--theme-text', '#ffffff');
+                root.style.setProperty('--theme-bg', '#fff5f8');
+                root.style.setProperty('--theme-border', '#f3c6d8');
+                root.style.setProperty('--theme-badge-bg', '#ffe0ef');
+                root.style.setProperty('--theme-badge-text', '#c2006b');
+                updatePWATheme('#e4007f', '#fff5f8', 'ライバー集会場');
+                return;
+            }
+
+            const mainColor = targetTheme.bg;
+            const textColor = targetTheme.color;
+            const bgColor = mixWithWhite(mainColor, 0.94);
+            const borderColor = mixWithWhite(mainColor, 0.72);
+            const badgeBg = mixWithWhite(mainColor, 0.86);
+            const badgeText = textColor === '#333333' ? darkenHex(mainColor, 0.58) : darkenHex(mainColor, 0.85);
+
+            root.style.setProperty('--theme-color', mainColor);
+            root.style.setProperty('--theme-text', textColor);
+            root.style.setProperty('--theme-bg', bgColor);
+            root.style.setProperty('--theme-border', borderColor);
+            root.style.setProperty('--theme-badge-bg', badgeBg);
+            root.style.setProperty('--theme-badge-text', badgeText);
+
+            const shortName = targetTheme.shortName || (targetTheme.isGroup ? targetTheme.name : ((targetTheme.name.split(' ')[1] || targetTheme.name) + '推し'));
+            updatePWATheme(mainColor, bgColor, shortName);
+        }
+
+        function changeThemeOshi(themeKey) {
+            try {
+                localStorage.setItem(THEME_STORAGE_KEY, themeKey);
+            } catch (e) {}
+            applyOshiTheme(themeKey);
+        }
+
+        async function hashPassword(plain) {
+            if (!plain) return '';
+            if (window.crypto && window.crypto.subtle) {
+                const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(plain));
+                return 'sha256:' + Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+            return plain;
+        }
+
+        async function ensureAdminHash() {
+            if (!adminMasterPasswordHash && ADMIN_MASTER_PASSWORD_PLAIN) {
+                adminMasterPasswordHash = await hashPassword(ADMIN_MASTER_PASSWORD_PLAIN);
+            }
+            return adminMasterPasswordHash;
+        }
+
+        async function verifyPostOrAdminPassword(inputPlain, storedPass) {
+            if (!inputPlain) return null;
+
+            const inputHash = await hashPassword(inputPlain);
+            const masterHash = await ensureAdminHash();
+
+            if (masterHash && inputHash === masterHash) {
+                return 'admin';
+            }
+
+            if (!storedPass) return null;
+            if (storedPass.startsWith('sha256:')) {
+                return inputHash === storedPass ? 'user' : null;
+            }
+            return inputPlain === storedPass ? 'user' : null;
+        }
+
+        function showMessage(text, isError = false) {
+            const box = document.getElementById('msg_box');
+            box.textContent = text;
+            box.className = isError ? 'msg error' : 'msg';
+            box.style.display = 'block';
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function escapeHtml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatComment(text, hideSpoilers) {
+            const escaped = escapeHtml(text);
+            if (hideSpoilers) {
+                return escaped.replace(
+                    /\[spoiler\]([\s\S]*?)\[\/spoiler\]/g,
+                    '<span class="inline-spoiler-locked" title="ネタバレ回避モードONのためロックされています">🙈 ネタバレ回避中</span>'
+                );
+            }
+            return escaped.replace(
+                /\[spoiler\]([\s\S]*?)\[\/spoiler\]/g,
+                '<span class="inline-spoiler" data-inline-spoiler="1" title="クリックでネタバレを表示/非表示">$1</span>'
+            );
+        }
+
+        function nowFormatted() {
+            const d = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        }
+
+        function initSelects() {
+            const catSelect = document.getElementById('category_select');
+            const oshiSelect = document.getElementById('oshi_select');
+            const searchOshiSelect = document.getElementById('search_oshi_select');
+            const searchTagSelect = document.getElementById('search_tag_select');
+            const themeOshiSelect = document.getElementById('theme_oshi_select');
+
+            catSelect.innerHTML = Object.entries(CATEGORIES)
+                .filter(([k]) => k !== 'all')
+                .map(([k, label]) => `<option value="${k}">${escapeHtml(label)}</option>`)
+                .join('');
+
+            oshiSelect.innerHTML = Object.entries(MEMBERS)
+                .map(([k, info]) => `<option value="${k}" data-group="${info.group}">${escapeHtml(info.name)}</option>`)
+                .join('');
+
+            const memberOnlyOptionsHtml = Object.entries(MEMBERS)
+                .filter(([k, info]) => k !== 'none' && !info.isGroup)
+                .map(([k, info]) => `<option value="${k}">${escapeHtml(info.name)}</option>`)
+                .join('');
+
+            const groupThemeOptionsHtml = Object.entries(GROUP_THEMES)
+                .map(([k, info]) => `<option value="${k}">${escapeHtml(info.name)}</option>`)
+                .join('');
+
+            const searchGroupOshiHtml = Object.entries(MEMBERS)
+                .filter(([k, info]) => info.isGroup)
+                .map(([k, info]) => `<option value="${k}">${escapeHtml(getOshiBadgeText(info))}</option>`)
+                .join('');
+
+            const searchMemberOshiHtml = Object.entries(MEMBERS)
+                .filter(([k, info]) => k !== 'none' && !info.isGroup)
+                .map(([k, info]) => `<option value="${k}">${escapeHtml(getOshiBadgeText(info))}</option>`)
+                .join('');
+
+            searchOshiSelect.innerHTML = '<option value="all">すべての推し・箱推し</option>' +
+                `<optgroup label="🌈 グループ箱推し">${searchGroupOshiHtml}</optgroup>` +
+                `<optgroup label="💖 メンバー推し">${searchMemberOshiHtml}</optgroup>`;
+
+            searchTagSelect.innerHTML = '<option value="all">すべての話題タグ</option>' +
+                PRESET_TAGS.map(t => `<option value="${escapeHtml(t)}">#${escapeHtml(t)}</option>`).join('');
+
+            themeOshiSelect.innerHTML =
+                '<option value="default">デフォルト（ラブライブピンク）</option>' +
+                `<optgroup label="🌈 グループカラー">${groupThemeOptionsHtml}</optgroup>` +
+                `<optgroup label="💖 メンバーカラー">${memberOnlyOptionsHtml}</optgroup>`;
+        }
+
+        function filterOshiOptions() {
+            const selectedCat = document.getElementById('category_select').value;
+            const oshiSelect = document.getElementById('oshi_select');
+            for (const opt of oshiSelect.options) {
+                const group = opt.getAttribute('data-group');
+                if (group === 'all' || selectedCat === 'other' || group === selectedCat) {
+                    opt.style.display = '';
+                    opt.disabled = false;
+                } else {
+                    opt.style.display = 'none';
+                    opt.disabled = true;
+                }
+            }
+            oshiSelect.value = 'none';
+        }
+
+        function toggleSpoilerLabelInput() {
+            const cb = document.getElementById('is_spoiler_cb');
+            document.getElementById('spoiler_label_box').style.display = cb.checked ? 'block' : 'none';
+        }
+
+        function wrapWithSpoiler() {
+            const textarea = document.getElementById('comment_input');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+            const selected = text.substring(start, end) || 'ここにネタバレ内容を入力';
+            const replacement = '[spoiler]' + selected + '[/spoiler]';
+            textarea.value = text.substring(0, start) + replacement + text.substring(end);
+            textarea.focus();
+            textarea.setSelectionRange(start + 9, start + 9 + selected.length);
+            saveDraft();
+        }
+
+        function previewImage(input) {
+            const wrap = document.getElementById('image_preview_wrap');
+            const img = document.getElementById('image_preview_img');
+            if (!input.files || !input.files[0]) {
+                state.selectedImageDataUrl = null;
+                wrap.style.display = 'none';
+                return;
+            }
+            const file = input.files[0];
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const tempImg = new Image();
+                tempImg.onload = function() {
+                    const maxDim = 900;
+                    let w = tempImg.width;
+                    let h = tempImg.height;
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) {
+                            h = Math.round(h * maxDim / w);
+                            w = maxDim;
+                        } else {
+                            w = Math.round(w * maxDim / h);
+                            h = maxDim;
+                        }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w;
+                    canvas.height = h;
+                    canvas.getContext('2d').drawImage(tempImg, 0, 0, w, h);
+                    const compressed = canvas.toDataURL('image/jpeg', 0.78);
+                    state.selectedImageDataUrl = compressed;
+                    img.src = compressed;
+                    wrap.style.display = 'flex';
+                };
+                tempImg.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearSelectedImage() {
+            document.getElementById('image_input').value = '';
+            document.getElementById('image_preview_wrap').style.display = 'none';
+            state.selectedImageDataUrl = null;
+        }
+
+        function setReply(id) {
+            setPostFormOpen(true);
+            const replyInput = document.getElementById('reply_to_input');
+            replyInput.value = id;
+            replyInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            document.getElementById('comment_input').focus();
+            saveDraft();
+        }
+
+        function resetForm() {
+            document.getElementById('edit_target_id').value = '';
+            document.getElementById('form_title').textContent = '📝 新規投稿 / リプライ';
+            document.getElementById('cancel_edit_btn').style.display = 'none';
+            document.getElementById('name_input').value = '';
+            document.getElementById('reply_to_input').value = '';
+            document.getElementById('comment_input').value = '';
+            document.getElementById('pass_input').value = '';
+            document.getElementById('pass_input').placeholder = '編集・削除用パスワード（任意）';
+            document.getElementById('is_spoiler_cb').checked = false;
+            document.getElementById('spoiler_label_input').value = '';
+            document.getElementById('existing_image_wrap').style.display = 'none';
+            document.getElementById('remove_image_cb').checked = false;
+            state.selectedOshis = [];
+            state.selectedTags = [];
+            renderSelectedOshiChips();
+            renderPresetTagChips();
+            toggleSpoilerLabelInput();
+            clearSelectedImage();
+            restoreDraftOrProfile();
+            if (state.cat !== 'all') {
+                document.getElementById('category_select').value = state.cat;
+                filterOshiOptions();
+            }
+            updateCooldownUI();
+            setPostFormOpen(false);
+        }
+
+        function cancelEdit() {
+            resetForm();
+            showMessage('編集モードをキャンセルしました。');
+        }
+
+        async function handlePostSubmit(e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submit_btn');
+            const editTargetId = document.getElementById('edit_target_id').value;
+
+            if (!editTargetId) {
+                const remain = getRemainingCooldownSec();
+                if (remain > 0) {
+                    updateCooldownUI();
+                    showMessage(`連投防止のため、あと ${remain} 秒待ってから投稿してください。`, true);
+                    return;
+                }
+            }
+
+            const category = document.getElementById('category_select').value;
+            const oshisToSave = state.selectedOshis.slice(0, MAX_OSHI_BADGES);
+            const primaryOshi = oshisToSave[0] || 'none';
+            const tagsToSave = [...state.selectedTags];
+            const name = document.getElementById('name_input').value.trim();
+            const replyRaw = document.getElementById('reply_to_input').value.trim();
+            const replyTo = replyRaw !== '' ? parseInt(replyRaw, 10) : null;
+            const comment = document.getElementById('comment_input').value.trim();
+            const isSpoiler = document.getElementById('is_spoiler_cb').checked;
+            const spoilerLabel = document.getElementById('spoiler_label_input').value.trim();
+            const rawPass = document.getElementById('pass_input').value;
+            const removeImage = document.getElementById('remove_image_cb').checked;
+
+            if (!name || !comment) {
+                showMessage('名前とコメントは必須です。', true);
+                return;
+            }
+
+            const matchedNg = findMatchedNgWord(name, comment, spoilerLabel);
+            if (matchedNg) {
+                showMessage(`🚫 不適切な表現・禁止ワード（「${matchedNg}」）が含まれているため投稿できません。内容を修正してください。`, true);
+                return;
+            }
+
+            submitBtn.disabled = true;
+            try {
+                if (!editTargetId) {
+                    const newId = await getNextPostId();
+                    const hashedPass = await hashPassword(rawPass);
+                    const newPost = {
+                        id: newId,
+                        category,
+                        oshi: primaryOshi,
+                        oshis: oshisToSave,
+                        tags: tagsToSave,
+                        reply_to: replyTo,
+                        name,
+                        comment,
+                        image: state.selectedImageDataUrl || null,
+                        is_spoiler: isSpoiler,
+                        spoiler_label: spoilerLabel,
+                        date: nowFormatted(),
+                        pass: hashedPass,
+                        likes: 0,
+                        reports: 0,
+                        pinned: false
+                    };
+
+                    if (useFirebase) {
+                        await set(ref(db, `bbs_posts/${newId}`), newPost);
+                    } else {
+                        const nextPosts = [...postsCache, newPost];
+                        if (saveLocalPosts(nextPosts)) {
+                            postsCache = nextPosts;
+                            render();
+                        }
+                    }
+
+                    initialLastSeenId = Math.max(initialLastSeenId, newId);
+                    saveLastSeenId(initialLastSeenId);
+
+                    saveUserProfile(name, category, oshisToSave);
+                    clearDraft(false);
+                    recordPostTimestamp();
+                    state.page = 1;
+                    resetForm();
+                    showMessage(`新規投稿（No.${newId}）を送信しました！`);
+                } else {
+                    const targetId = parseInt(editTargetId, 10);
+                    const target = postsCache.find(p => Number(p.id) === targetId);
+                    if (!target) {
+                        showMessage('編集対象の投稿が見つかりません。', true);
+                        return;
+                    }
+
+                    let nextImage = target.image || null;
+                    if (state.selectedImageDataUrl) {
+                        nextImage = state.selectedImageDataUrl;
+                    } else if (removeImage) {
+                        nextImage = null;
+                    }
+
+                    const nextPass = rawPass !== '' ? await hashPassword(rawPass) : (target.pass || '');
+                    const updates = {
+                        category,
+                        oshi: primaryOshi,
+                        oshis: oshisToSave,
+                        tags: tagsToSave,
+                        reply_to: replyTo,
+                        name,
+                        comment,
+                        image: nextImage,
+                        is_spoiler: isSpoiler,
+                        spoiler_label: spoilerLabel,
+                        date: nowFormatted() + ' (編集済)',
+                        pass: nextPass
+                    };
+
+                    if (useFirebase) {
+                        await update(ref(db, `bbs_posts/${targetId}`), updates);
+                    } else {
+                        Object.assign(target, updates);
+                        if (saveLocalPosts(postsCache)) {
+                            render();
+                        }
+                    }
+
+                    resetForm();
+                    showMessage(`投稿番号 ${targetId} を編集しました！`);
+                }
+            } catch (err) {
+                console.error(err);
+                showMessage('通信エラーが発生しました。Firebaseのルール設定またはdatabaseURLを確認してください。', true);
+            } finally {
+                updateCooldownUI();
+            }
+        }
+
+        async function handleDeleteSubmit(e) {
+            e.preventDefault();
+            const deleteId = parseInt(document.getElementById('delete_id_input').value, 10);
+            const deletePass = document.getElementById('delete_pass_input').value;
+            const idx = postsCache.findIndex(p => Number(p.id) === deleteId);
+
+            if (idx === -1) {
+                showMessage('指定された投稿番号が見つかりません。', true);
+                return;
+            }
+
+            const role = await verifyPostOrAdminPassword(deletePass, postsCache[idx].pass);
+            if (role) {
+                try {
+                    if (useFirebase) {
+                        await remove(ref(db, `bbs_posts/${deleteId}`));
+                    } else {
+                        postsCache.splice(idx, 1);
+                        saveLocalPosts(postsCache);
+                        render();
+                    }
+                    document.getElementById('delete_id_input').value = '';
+                    document.getElementById('delete_pass_input').value = '';
+                    const prefix = role === 'admin' ? '🛡️ 【管理者権限】' : '';
+                    showMessage(`${prefix}投稿番号 ${deleteId} を削除しました。`);
+                } catch (err) {
+                    console.error(err);
+                    showMessage('削除中にエラーが発生しました。', true);
+                }
+            } else {
+                showMessage('パスワードが一致しないか、パスワード未設定の投稿のため削除できません。', true);
+            }
+        }
+
+        async function handleEditLoad(e) {
+            e.preventDefault();
+            const editId = parseInt(document.getElementById('edit_id_input').value, 10);
+            const editPass = document.getElementById('edit_pass_input').value;
+            const target = postsCache.find(p => Number(p.id) === editId);
+
+            if (!target) {
+                showMessage('指定された投稿番号が見つかりません。', true);
+                return;
+            }
+
+            const role = await verifyPostOrAdminPassword(editPass, target.pass);
+            if (role) {
+                document.getElementById('edit_target_id').value = target.id;
+                document.getElementById('form_title').textContent = role === 'admin'
+                    ? `🛡️ 投稿 No.${target.id} を管理者編集中`
+                    : `✏️ 投稿 No.${target.id} を編集中`;
+                document.getElementById('cancel_edit_btn').style.display = 'inline-block';
+
+                document.getElementById('category_select').value = target.category || 'other';
+                filterOshiOptions();
+                state.selectedOshis = getPostOshiKeys(target);
+                state.selectedTags = getPostTags(target);
+                renderSelectedOshiChips();
+                renderPresetTagChips();
+
+                document.getElementById('name_input').value = target.name || '';
+                document.getElementById('reply_to_input').value = target.reply_to || '';
+                document.getElementById('comment_input').value = target.comment || '';
+                document.getElementById('is_spoiler_cb').checked = Boolean(target.is_spoiler);
+                document.getElementById('spoiler_label_input').value = target.spoiler_label || '';
+                toggleSpoilerLabelInput();
+
+                document.getElementById('pass_input').value = '';
+                document.getElementById('pass_input').placeholder = '新しいパスワード（変更しない場合は空欄）';
+                document.getElementById('remove_image_cb').checked = false;
+                clearSelectedImage();
+
+                if (target.image) {
+                    document.getElementById('existing_image_img').src = target.image;
+                    document.getElementById('existing_image_wrap').style.display = 'block';
+                } else {
+                    document.getElementById('existing_image_wrap').style.display = 'none';
+                }
+
+                document.getElementById('edit_id_input').value = '';
+                document.getElementById('edit_pass_input').value = '';
+                updateCooldownUI();
+                setPostFormOpen(true);
+                document.getElementById('post_form_wrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const prefix = role === 'admin' ? '🛡️ 【管理者権限】' : '';
+                showMessage(`${prefix}投稿番号 ${editId} の編集モードです。上のフォームから内容を書き換えて送信してください。`);
+            } else {
+                showMessage('パスワードが一致しないか、パスワード未設定の投稿のため編集できません。', true);
+            }
+        }
+
+        async function handlePinSubmit(e) {
+            e.preventDefault();
+            const pinId = parseInt(document.getElementById('pin_id_input').value, 10);
+            const pinPass = document.getElementById('pin_pass_input').value;
+            const target = postsCache.find(p => Number(p.id) === pinId);
+
+            if (!target) {
+                showMessage('指定された投稿番号が見つかりません。', true);
+                return;
+            }
+
+            const role = await verifyPostOrAdminPassword(pinPass, null);
+            if (role !== 'admin') {
+                showMessage('管理者マスターパスワードが一致しません。', true);
+                return;
+            }
+
+            const nextPinned = !Boolean(target.pinned);
+            try {
+                if (useFirebase) {
+                    await update(ref(db, `bbs_posts/${pinId}`), { pinned: nextPinned });
+                } else {
+                    target.pinned = nextPinned;
+                    saveLocalPosts(postsCache);
+                    render();
+                }
+                document.getElementById('pin_id_input').value = '';
+                document.getElementById('pin_pass_input').value = '';
+                showMessage(nextPinned
+                    ? `📌 投稿 No.${pinId} を最上部にピン留め（固定表示）しました！`
+                    : `📌 投稿 No.${pinId} のピン留めを解除しました。`);
+            } catch (err) {
+                console.error(err);
+                showMessage('ピン留め更新中にエラーが発生しました。', true);
+            }
+        }
+
+        async function toggleLike(id) {
+            const numId = Number(id);
+            const alreadyLiked = state.likedIds.has(numId);
+            const delta = alreadyLiked ? -1 : 1;
+
+            if (alreadyLiked) {
+                state.likedIds.delete(numId);
+            } else {
+                state.likedIds.add(numId);
+            }
+            saveIdSet(LIKED_IDS_STORAGE_KEY, state.likedIds);
+
+            if (useFirebase) {
+                try {
+                    const likesRef = ref(db, `bbs_posts/${numId}/likes`);
+                    await runTransaction(likesRef, (currentLikes) => {
+                        return Math.max(0, (Number(currentLikes) || 0) + delta);
+                    });
+                } catch (err) {
+                    console.error(err);
+                }
+            } else {
+                const target = postsCache.find(p => Number(p.id) === numId);
+                if (!target) return;
+                target.likes = Math.max(0, (Number(target.likes) || 0) + delta);
+                saveLocalPosts(postsCache);
+                render();
+            }
+        }
+
+        async function reportPost(id) {
+            const numId = Number(id);
+            if (state.reportedIds.has(numId)) {
+                showMessage('この投稿はすでに通報済みです。', true);
+                return;
+            }
+            if (!confirm(`投稿 No.${numId} を不適切な投稿として通報しますか？`)) {
+                return;
+            }
+
+            state.reportedIds.add(numId);
+            saveIdSet(REPORTED_IDS_STORAGE_KEY, state.reportedIds);
+
+            if (useFirebase) {
+                try {
+                    const repRef = ref(db, `bbs_posts/${numId}/reports`);
+                    await runTransaction(repRef, (cur) => (Number(cur) || 0) + 1);
+                    showMessage(`🚩 投稿 No.${numId} の通報を受け付けました。ご協力ありがとうございます。`);
+                } catch (err) {
+                    console.error(err);
+                }
+            } else {
+                const target = postsCache.find(p => Number(p.id) === numId);
+                if (target) {
+                    target.reports = (Number(target.reports) || 0) + 1;
+                    saveLocalPosts(postsCache);
+                    render();
+                }
+                showMessage(`🚩 投稿 No.${numId} の通報を受け付けました。`);
+            }
+        }
+
+        function showReplyPreview(targetEl, replyToId) {
+            const tooltip = document.getElementById('reply_preview_tooltip');
+            const targetPost = postsCache.find(p => Number(p.id) === Number(replyToId));
+            if (!targetPost) {
+                tooltip.innerHTML = `<strong>No.${escapeHtml(replyToId)}</strong><div style="color:var(--text-sub);margin-top:4px;">元の投稿は削除されたか見つかりません。</div>`;
+            } else {
+                const snippet = String(targetPost.comment || '').slice(0, 120) + ((targetPost.comment || '').length > 120 ? '…' : '');
+                tooltip.innerHTML = `
+                    <div style="font-weight:bold;color:var(--theme-color);margin-bottom:4px;">
+                        ↩ No.${targetPost.id} ${escapeHtml(targetPost.name)}
+                    </div>
+                    <div style="white-space:pre-wrap;line-height:1.4;">${escapeHtml(snippet)}</div>
+                `;
+            }
+
+            const rect = targetEl.getBoundingClientRect();
+            tooltip.style.display = 'block';
+            const top = Math.min(window.innerHeight - tooltip.offsetHeight - 12, rect.bottom + 6);
+            const left = Math.min(window.innerWidth - tooltip.offsetWidth - 12, Math.max(12, rect.left));
+            tooltip.style.top = `${Math.max(12, top)}px`;
+            tooltip.style.left = `${left}px`;
+        }
+
+        function hideReplyPreview() {
+            const tooltip = document.getElementById('reply_preview_tooltip');
+            if (tooltip) tooltip.style.display = 'none';
+        }
+
+        function toggleReplyThread(postId) {
+            const numId = Number(postId);
+            if (state.expandedReplyIds.has(numId)) {
+                state.expandedReplyIds.delete(numId);
+            } else {
+                state.expandedReplyIds.add(numId);
+            }
+            render();
+        }
+
+        function selectCategory(cat) {
+            state.cat = cat;
+            state.page = 1;
+            if (cat !== 'all' && !document.getElementById('edit_target_id').value) {
+                document.getElementById('category_select').value = cat;
+                filterOshiOptions();
+            }
+            render();
+        }
+
+        function handleSearchSubmit(e) {
+            e.preventDefault();
+            state.q = document.getElementById('search_q_input').value.trim();
+            state.oshi = document.getElementById('search_oshi_select').value;
+            state.tag = document.getElementById('search_tag_select').value;
+            state.page = 1;
+            render();
+        }
+
+        function filterByTagPill(tag) {
+            state.tag = tag;
+            state.page = 1;
+            document.getElementById('search_tag_select').value = tag;
+            document.getElementById('list-top').scrollIntoView({ behavior: 'smooth' });
+            render();
+        }
+
+        function clearSearch() {
+            state.q = '';
+            state.oshi = 'all';
+            state.tag = 'all';
+            state.page = 1;
+            document.getElementById('search_q_input').value = '';
+            document.getElementById('search_oshi_select').value = 'all';
+            document.getElementById('search_tag_select').value = 'all';
+            render();
+        }
+
+        function toggleHideSpoiler() {
+            state.hideSpoiler = !state.hideSpoiler;
+            state.page = 1;
+            render();
+        }
+
+        function toggleOnlyImage() {
+            state.onlyImage = !state.onlyImage;
+            state.page = 1;
+            render();
+        }
+
+        function changePage(page) {
+            state.page = page;
+            render();
+            document.getElementById('list-top').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function jumpToPost(id) {
+            const el = document.getElementById('post-' + id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                state.cat = 'all';
+                state.q = '';
+                state.oshi = 'all';
+                state.tag = 'all';
+                state.onlyImage = false;
+                state.page = 1;
+                render();
+                setTimeout(() => {
+                    document.getElementById('post-' + id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 50);
+            }
+        }
+
+        function markAllAsRead() {
+            const maxId = postsCache.reduce((m, p) => Math.max(m, Number(p.id) || 0), 0);
+            initialLastSeenId = maxId;
+            saveLastSeenId(maxId);
+            render();
+        }
+
+        function buildPostBodyHtml(row) {
+            const isSpoiler = Boolean(row.is_spoiler);
+            const isReported = (Number(row.reports) || 0) >= REPORT_HIDE_THRESHOLD;
+            const spoilerTitle = row.spoiler_label ? escapeHtml(row.spoiler_label) : 'ネタバレ注意！内容を表示する';
+            const tagsHtml = buildPostTagsHtml(row);
+            const commentHtml = `<div class="post-comment">${formatComment(row.comment, state.hideSpoiler)}</div>`;
+            const imageHtml = row.image
+                ? `<div class="post-image-wrap"><img src="${escapeHtml(row.image)}" alt="添付画像" data-zoom-img="1"></div>`
+                : '';
+
+            const inner = tagsHtml + commentHtml + imageHtml;
+
+            if (isReported) {
+                return `<details class="reported-box"><summary>🚩 通報が一定数集まったため自動折りたたみ中です（クリックして内容を確認）</summary><div style="margin-top:8px;">${inner}</div></details>`;
+            }
+            if (isSpoiler) {
+                return `<details class="spoiler-box"><summary>⚠️ ${spoilerTitle}</summary>${inner}</details>`;
+            }
+            return inner;
+        }
+
+        function render() {
+            const posts = postsCache;
+
+            const repliesMap = new Map();
+            for (const p of posts) {
+                if (p.reply_to != null && p.reply_to !== '') {
+                    const parentId = Number(p.reply_to);
+                    if (!repliesMap.has(parentId)) repliesMap.set(parentId, []);
+                    repliesMap.get(parentId).push(p);
+                }
+            }
+            for (const list of repliesMap.values()) {
+                list.sort((a, b) => Number(a.id) - Number(b.id));
+            }
+
+            const unreadPosts = posts.filter(p => Number(p.id) > initialLastSeenId);
+            const unreadBanner = document.getElementById('unread_banner');
+            if (unreadPosts.length > 0) {
+                document.getElementById('unread_banner_text').textContent =
+                    `✨ 前回のアクセス以降に ${unreadPosts.length} 件の新しい投稿があります！`;
+                unreadBanner.style.display = 'flex';
+            } else {
+                unreadBanner.style.display = 'none';
+            }
+
+            const pinnedPosts = posts
+                .filter(p => Boolean(p.pinned))
+                .sort((a, b) => Number(b.id) - Number(a.id));
+            const pinnedSection = document.getElementById('pinned_section');
+            const pinnedList = document.getElementById('pinned_list');
+            if (pinnedPosts.length > 0) {
+                pinnedList.innerHTML = pinnedPosts.map(row => {
+                    const catName = CATEGORIES[row.category] || 'その他';
+                    const oshiBadges = buildOshiBadgesHtml(row);
+                    return `
+                        <div class="pickup-card" style="border-color:#91caff;">
+                            <div class="post-header">
+                                <span class="pinned-badge">📌 固定表示</span>
+                                <strong>No.${row.id}</strong>
+                                <span class="badge">${escapeHtml(catName)}</span>
+                                <strong>${escapeHtml(row.name)}</strong>
+                                ${oshiBadges}
+                                <span class="jump-link" style="color:#1890ff;" data-jump-id="${row.id}">元の投稿へ移動 ↓</span>
+                            </div>
+                            ${buildPostBodyHtml(row)}
+                        </div>
+                    `;
+                }).join('');
+                pinnedSection.style.display = 'block';
+            } else {
+                pinnedSection.style.display = 'none';
+            }
+
+            const topCandidates = posts
+                .filter(p => (Number(p.likes) || 0) > 0 && (!state.hideSpoiler || !p.is_spoiler) && (Number(p.reports) || 0) < REPORT_HIDE_THRESHOLD)
+                .sort((a, b) => (Number(b.likes) - Number(a.likes)) || (Number(b.id) - Number(a.id)))
+                .slice(0, 3);
+
+            const pickupSection = document.getElementById('pickup_section');
+            const pickupList = document.getElementById('pickup_list');
+            if (topCandidates.length > 0) {
+                const medals = ['🥇 1位', '🥈 2位', '🥉 3位'];
+                pickupList.innerHTML = topCandidates.map((row, idx) => {
+                    const catName = CATEGORIES[row.category] || 'その他';
+                    const oshiBadges = buildOshiBadgesHtml(row);
+                    const likedClass = state.likedIds.has(Number(row.id)) ? 'liked' : '';
+                    return `
+                        <div class="pickup-card">
+                            <div class="post-header">
+                                <span class="rank-badge">${medals[idx]}</span>
+                                <strong>No.${row.id}</strong>
+                                <span class="badge">${escapeHtml(catName)}</span>
+                                <strong>${escapeHtml(row.name)}</strong>
+                                ${oshiBadges}
+                                <span class="jump-link" data-jump-id="${row.id}">元の投稿へ移動 ↓</span>
+                            </div>
+                            ${buildPostBodyHtml(row)}
+                            <div class="post-footer">
+                                <div class="post-footer-right">
+                                    <button type="button" class="like-btn ${likedClass}" data-like-id="${row.id}">
+                                        🙏 尊い！ <span>${Number(row.likes) || 0}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                pickupSection.style.display = 'block';
+            } else {
+                pickupSection.style.display = 'none';
+            }
+
+            document.getElementById('category_tabs').innerHTML = Object.entries(CATEGORIES).map(([k, label]) => `
+                <button type="button" class="tab ${state.cat === k ? 'active' : ''}" data-cat="${k}">
+                    ${escapeHtml(label)}
+                </button>
+            `).join('');
+
+            const qLower = state.q.toLowerCase();
+            const baseFiltered = posts.filter(p => {
+                if (state.cat !== 'all' && p.category !== state.cat) return false;
+                const postOshis = getPostOshiKeys(p);
+                if (state.oshi !== 'all' && !postOshis.includes(state.oshi)) return false;
+                const postTags = getPostTags(p);
+                if (state.tag !== 'all' && !postTags.includes(state.tag)) return false;
+                if (state.onlyImage && !p.image) return false;
+                if (qLower !== '') {
+                    const oshiNames = postOshis.map(k => MEMBERS[k]?.name || '').join(' ');
+                    const hay = `${p.name || ''}\n${p.comment || ''}\n${p.spoiler_label || ''}\n${oshiNames}\n${postTags.join(' ')}`.toLowerCase();
+                    if (!hay.includes(qLower)) return false;
+                }
+                return true;
+            });
+
+            let hiddenSpoilerCount = 0;
+            const filtered = baseFiltered.filter(p => {
+                if (state.hideSpoiler && p.is_spoiler) {
+                    hiddenSpoilerCount++;
+                    return false;
+                }
+                return true;
+            }).sort((a, b) => Number(b.id) - Number(a.id));
+
+            const spoilerBtn = document.getElementById('spoiler_toggle_btn');
+            spoilerBtn.classList.toggle('active', state.hideSpoiler);
+            spoilerBtn.textContent = state.hideSpoiler
+                ? '🛡️ ネタバレ回避モード：ON（解除）'
+                : '🛡️ ネタバレ回避モード：OFF（隠す）';
+
+            const imageBtn = document.getElementById('image_toggle_btn');
+            imageBtn.classList.toggle('active', state.onlyImage);
+            imageBtn.textContent = state.onlyImage
+                ? '📷 画像付き投稿のみ：ON（解除）'
+                : '📷 画像付き投稿のみ：OFF（写真だけ表示）';
+
+            const hiddenNote = document.getElementById('spoiler_hidden_note');
+            if (state.hideSpoiler && hiddenSpoilerCount > 0) {
+                hiddenNote.textContent = `※ ネタバレ投稿 ${hiddenSpoilerCount} 件を非表示中`;
+                hiddenNote.style.display = 'inline';
+            } else {
+                hiddenNote.style.display = 'none';
+            }
+
+            document.getElementById('clear_search_btn').style.display =
+                (state.q !== '' || state.oshi !== 'all' || state.tag !== 'all') ? 'inline-block' : 'none';
+
+            const totalFiltered = filtered.length;
+            const totalPages = Math.max(1, Math.ceil(totalFiltered / PER_PAGE));
+            if (state.page > totalPages) state.page = totalPages;
+            const offset = (state.page - 1) * PER_PAGE;
+            const paged = filtered.slice(offset, offset + PER_PAGE);
+
+            document.getElementById('list_count_info').innerHTML = totalFiltered > 0
+                ? `全 <strong>${totalFiltered}</strong> 件中 <strong>${offset + 1}〜${Math.min(offset + PER_PAGE, totalFiltered)}</strong> 件を表示 （${state.page} / ${totalPages} ページ）`
+                : '全 0 件';
+
+            const statusParts = [];
+            if (state.onlyImage) statusParts.push('【📷画像付きのみ】');
+            if (state.tag !== 'all') statusParts.push(`【#${escapeHtml(state.tag)}】`);
+            if (state.q !== '') statusParts.push(`「${escapeHtml(state.q)}」`);
+            if (state.oshi !== 'all' && MEMBERS[state.oshi]) statusParts.push(`【${escapeHtml(getOshiBadgeText(MEMBERS[state.oshi]))}】`);
+            document.getElementById('search_status_info').innerHTML = statusParts.length > 0
+                ? '絞り込み条件：' + statusParts.join(' ')
+                : '';
+
+            const container = document.getElementById('posts_container');
+            if (totalFiltered === 0) {
+                container.innerHTML = '<p>条件に一致する投稿はまだありません。</p>';
+            } else {
+                container.innerHTML = paged.map(row => {
+                    const numId = Number(row.id);
+                    const catName = CATEGORIES[row.category] || 'その他';
+                    const borderStyle = buildPostBorderStyle(row);
+                    const oshiBadges = buildOshiBadgesHtml(row);
+                    const isNew = numId > initialLastSeenId;
+                    const newBadgeHtml = isNew ? '<span class="new-badge">NEW</span>' : '';
+                    const pinBadgeHtml = row.pinned ? '<span class="pinned-badge">📌 固定</span>' : '';
+
+                    const replyBadge = row.reply_to
+                        ? `<div><a href="#post-${row.reply_to}" class="reply-badge" data-jump-id="${row.reply_to}" data-preview-reply-id="${row.reply_to}">&gt;&gt; No.${row.reply_to} へのリプライ</a></div>`
+                        : '';
+
+                    const childReplies = repliesMap.get(numId) || [];
+                    const isThreadOpen = state.expandedReplyIds.has(numId);
+                    const repliesBtnHtml = childReplies.length > 0
+                        ? `<button type="button" class="replies-toggle-btn" data-toggle-thread-id="${numId}">💬 返信 ${childReplies.length}件を${isThreadOpen ? '閉じる ▲' : '表示 ▼'}</button>`
+                        : '';
+
+                    const repliesThreadHtml = (childReplies.length > 0 && isThreadOpen)
+                        ? `<div class="replies-thread-box" style="display:block;">
+                            ${childReplies.map(rep => `
+                                <div class="reply-tree-item">
+                                    <div style="font-size:0.85em;color:var(--text-sub);margin-bottom:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+                                        <strong>No.${rep.id}</strong>
+                                        <strong>${escapeHtml(rep.name)}</strong>
+                                        ${buildOshiBadgesHtml(rep)}
+                                        <span>(${escapeHtml(rep.date || '')})</span>
+                                        <span class="jump-link" data-jump-id="${rep.id}">投稿へ移動</span>
+                                    </div>
+                                    <div style="white-space:pre-wrap;">${formatComment(rep.comment, state.hideSpoiler)}</div>
+                                </div>
+                            `).join('')}
+                        </div>`
+                        : '';
+
+                    const likedClass = state.likedIds.has(numId) ? 'liked' : '';
+                    const reportedClass = state.reportedIds.has(numId) ? 'reported' : '';
+
+                    return `
+                        <div class="post-card" id="post-${row.id}" style="${borderStyle}">
+                            <div class="post-header">
+                                ${pinBadgeHtml}
+                                ${newBadgeHtml}
+                                <strong>No.${row.id}</strong>
+                                <span class="badge">${escapeHtml(catName)}</span>
+                                <strong>${escapeHtml(row.name)}</strong>
+                                ${oshiBadges}
+                                <span>(${escapeHtml(row.date || '')})</span>
+                                <span class="reply-link" data-reply-id="${row.id}">↩ この投稿にリプする</span>
+                            </div>
+                            ${replyBadge}
+                            ${buildPostBodyHtml(row)}
+                            <div class="post-footer">
+                                <div class="post-footer-left">
+                                    ${repliesBtnHtml}
+                                </div>
+                                <div class="post-footer-right">
+                                    <button type="button" class="report-btn ${reportedClass}" data-report-id="${row.id}" title="不適切な投稿を通報">
+                                        🚩 ${state.reportedIds.has(numId) ? '通報済' : '通報'}
+                                    </button>
+                                    <button type="button" class="like-btn ${likedClass}" data-like-id="${row.id}">
+                                        🙏 尊い！ <span>${Number(row.likes) || 0}</span>
+                                    </button>
+                                </div>
+                            </div>
+                            ${repliesThreadHtml}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            const nav = document.getElementById('pagination_nav');
+            if (totalPages <= 1) {
+                nav.innerHTML = '';
+            } else {
+                let html = state.page > 1
+                    ? `<button type="button" class="page-link" data-page="${state.page - 1}">« 前のページ</button>`
+                    : `<span class="page-link disabled">« 前のページ</span>`;
+
+                const startPage = Math.max(1, state.page - 2);
+                const endPage = Math.min(totalPages, state.page + 2);
+
+                if (startPage > 1) {
+                    html += `<button type="button" class="page-link" data-page="1">1</button>`;
+                    if (startPage > 2) html += `<span style="color:#999;">…</span>`;
+                }
+
+                for (let p = startPage; p <= endPage; p++) {
+                    html += `<button type="button" class="page-link ${p === state.page ? 'active' : ''}" data-page="${p}">${p}</button>`;
+                }
+
+                if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) html += `<span style="color:#999;">…</span>`;
+                    html += `<button type="button" class="page-link" data-page="${totalPages}">${totalPages}</button>`;
+                }
+
+                html += state.page < totalPages
+                    ? `<button type="button" class="page-link" data-page="${state.page + 1}">次のページ »</button>`
+                    : `<span class="page-link disabled">次のページ »</span>`;
+
+                nav.innerHTML = html;
+            }
+        }
+
+        function exportJson() {
+            const blob = new Blob([JSON.stringify(postsCache, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'lovelive_bbs_backup.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importJson(input) {
+            const file = input.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!Array.isArray(data)) throw new Error('Invalid format');
+
+                    if (useFirebase) {
+                        const postsMap = {};
+                        let maxId = 0;
+                        for (const item of data) {
+                            if (item && item.id != null) {
+                                const idNum = Number(item.id);
+                                postsMap[idNum] = item;
+                                if (idNum > maxId) maxId = idNum;
+                            }
+                        }
+                        await set(ref(db, 'bbs_posts'), postsMap);
+                        await set(ref(db, 'bbs_meta/last_id'), maxId);
+                        state.page = 1;
+                        showMessage(`${Object.keys(postsMap).length} 件の投稿データをFirebaseに同期復元しました！`);
+                    } else if (saveLocalPosts(data)) {
+                        postsCache = data;
+                        state.page = 1;
+                        render();
+                        showMessage(`${data.length} 件の投稿データを読み込みました！`);
+                    }
+                } catch (err) {
+                    alert('JSONファイルの形式が正しくありません。');
+                }
+                input.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            await ensureAdminHash();
+            initSelects();
+            filterOshiOptions();
+            restoreDraftOrProfile();
+            startCooldownWatcher();
+
+            let savedDark = false;
+            try {
+                savedDark = localStorage.getItem(DARK_MODE_STORAGE_KEY) === '1';
+            } catch (e) {}
+            applyDarkMode(savedDark);
+
+            let savedTheme = 'default';
+            try {
+                savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || 'default';
+            } catch (e) {}
+            const themeSelect = document.getElementById('theme_oshi_select');
+            if (themeSelect && (GROUP_THEMES[savedTheme] || MEMBERS[savedTheme])) {
+                themeSelect.value = savedTheme;
+            }
+            applyOshiTheme(savedTheme);
+
+            document.getElementById('dark_mode_btn').addEventListener('click', toggleDarkMode);
+            document.getElementById('theme_oshi_select').addEventListener('change', (e) => changeThemeOshi(e.target.value));
+            document.getElementById('toggle_post_form_btn').addEventListener('click', togglePostForm);
+            document.getElementById('toggle_manage_form_btn').addEventListener('click', toggleManageForm);
+            document.getElementById('category_select').addEventListener('change', () => {
+                filterOshiOptions();
+                saveDraft();
+            });
+            document.getElementById('oshi_select').addEventListener('change', handleOshiSelectChange);
+            document.getElementById('clear_oshi_btn').addEventListener('click', clearSelectedOshis);
+            document.getElementById('image_input').addEventListener('change', (e) => previewImage(e.target));
+            document.getElementById('clear_image_btn').addEventListener('click', clearSelectedImage);
+            document.getElementById('is_spoiler_cb').addEventListener('change', () => {
+                toggleSpoilerLabelInput();
+                saveDraft();
+            });
+            document.getElementById('wrap_spoiler_btn').addEventListener('click', wrapWithSpoiler);
+            document.getElementById('cancel_edit_btn').addEventListener('click', cancelEdit);
+            document.getElementById('clear_draft_btn').addEventListener('click', () => clearDraft(true));
+
+            ['name_input', 'reply_to_input', 'comment_input', 'spoiler_label_input'].forEach(elId => {
+                document.getElementById(elId).addEventListener('input', saveDraft);
+            });
+
+            document.getElementById('post_form').addEventListener('submit', handlePostSubmit);
+            document.getElementById('delete_form').addEventListener('submit', handleDeleteSubmit);
+            document.getElementById('edit_load_form').addEventListener('submit', handleEditLoad);
+            document.getElementById('pin_form').addEventListener('submit', handlePinSubmit);
+            document.getElementById('search_form').addEventListener('submit', handleSearchSubmit);
+            document.getElementById('clear_search_btn').addEventListener('click', clearSearch);
+            document.getElementById('spoiler_toggle_btn').addEventListener('click', toggleHideSpoiler);
+            document.getElementById('image_toggle_btn').addEventListener('click', toggleOnlyImage);
+            document.getElementById('export_json_btn').addEventListener('click', exportJson);
+            document.getElementById('import_json_input').addEventListener('change', (e) => importJson(e.target));
+
+            document.getElementById('jump_unread_btn').addEventListener('click', () => {
+                const oldestUnread = postsCache
+                    .filter(p => Number(p.id) > initialLastSeenId)
+                    .sort((a, b) => Number(a.id) - Number(b.id))[0];
+                if (oldestUnread) jumpToPost(oldestUnread.id);
+            });
+            document.getElementById('mark_read_btn').addEventListener('click', markAllAsRead);
+
+            document.body.addEventListener('mouseover', (e) => {
+                const previewTrigger = e.target.closest('[data-preview-reply-id]');
+                if (previewTrigger) {
+                    showReplyPreview(previewTrigger, previewTrigger.getAttribute('data-preview-reply-id'));
+                }
+            });
+            document.body.addEventListener('mouseout', (e) => {
+                if (e.target.closest('[data-preview-reply-id]')) {
+                    hideReplyPreview();
+                }
+            });
+
+            document.body.addEventListener('click', (e) => {
+                const toggleTagBtn = e.target.closest('[data-toggle-tag]');
+                if (toggleTagBtn) {
+                    togglePresetTag(toggleTagBtn.getAttribute('data-toggle-tag'));
+                    return;
+                }
+                const filterTagBtn = e.target.closest('[data-filter-tag]');
+                if (filterTagBtn) {
+                    filterByTagPill(filterTagBtn.getAttribute('data-filter-tag'));
+                    return;
+                }
+                const removeOshiBtn = e.target.closest('[data-remove-oshi]');
+                if (removeOshiBtn) {
+                    removeSelectedOshi(removeOshiBtn.getAttribute('data-remove-oshi'));
+                    return;
+                }
+                const likeBtn = e.target.closest('[data-like-id]');
+                if (likeBtn) {
+                    toggleLike(likeBtn.getAttribute('data-like-id'));
+                    return;
+                }
+                const reportBtn = e.target.closest('[data-report-id]');
+                if (reportBtn) {
+                    reportPost(reportBtn.getAttribute('data-report-id'));
+                    return;
+                }
+                const toggleThreadBtn = e.target.closest('[data-toggle-thread-id]');
+                if (toggleThreadBtn) {
+                    toggleReplyThread(toggleThreadBtn.getAttribute('data-toggle-thread-id'));
+                    return;
+                }
+                const replyBtn = e.target.closest('[data-reply-id]');
+                if (replyBtn) {
+                    setReply(replyBtn.getAttribute('data-reply-id'));
+                    return;
+                }
+                const jumpBtn = e.target.closest('[data-jump-id]');
+                if (jumpBtn) {
+                    e.preventDefault();
+                    hideReplyPreview();
+                    jumpToPost(jumpBtn.getAttribute('data-jump-id'));
+                    return;
+                }
+                const catBtn = e.target.closest('[data-cat]');
+                if (catBtn) {
+                    selectCategory(catBtn.getAttribute('data-cat'));
+                    return;
+                }
+                const pageBtn = e.target.closest('[data-page]');
+                if (pageBtn) {
+                    changePage(Number(pageBtn.getAttribute('data-page')));
+                    return;
+                }
+                const spoilerSpan = e.target.closest('[data-inline-spoiler]');
+                if (spoilerSpan) {
+                    spoilerSpan.classList.toggle('revealed');
+                    return;
+                }
+                const zoomImg = e.target.closest('[data-zoom-img]');
+                if (zoomImg) {
+                    window.open(zoomImg.src, '_blank');
+                }
+            });
+
+            if ('serviceWorker' in navigator && location.protocol === 'https:') {
+                const swCode = `
+                    self.addEventListener('install', (e) => self.skipWaiting());
+                    self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+                    self.addEventListener('fetch', (e) => e.respondWith(fetch(e.request)));
+                `;
+                const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+            }
+
+            initFirebaseOrLocal();
+        });
+    </script>
+</body>
+</html>
