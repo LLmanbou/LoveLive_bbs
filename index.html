@@ -99,6 +99,11 @@
             font-weight: bold;
             cursor: pointer;
         }
+        .dark-toggle-btn.admin-active {
+            background: #e6f4ff;
+            border-color: #1890ff;
+            color: #0958d9;
+        }
         .theme-switcher {
             display: inline-flex;
             align-items: center;
@@ -132,6 +137,14 @@
             padding: 15px;
             margin-bottom: 16px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .admin-login-bar {
+            background: var(--card-bg);
+            border: 2px solid #1890ff;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 3px 10px rgba(24, 144, 255, 0.12);
         }
         .accordion-toggle-btn {
             width: 100%;
@@ -344,14 +357,6 @@
         }
         .post-tag-pill:hover {
             filter: brightness(0.94);
-        }
-        .draft-status-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.78em;
-            color: var(--text-sub);
-            margin-bottom: 8px;
         }
         input[type="text"], input[type="password"], input[type="number"], select, textarea {
             padding: 8px;
@@ -853,7 +858,6 @@
             text-decoration: underline;
             margin-left: auto;
         }
-        /* リプライ先ホバー・タッププレビューポップアップ */
         .reply-preview-tooltip {
             position: fixed;
             z-index: 9999;
@@ -898,7 +902,7 @@
         }
         .flex-forms {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 12px;
         }
         .admin-hint {
@@ -921,7 +925,6 @@
         }
         @media (max-width: 680px) {
             body { padding: 14px; }
-            .flex-forms { grid-template-columns: 1fr; }
             .search-box { flex-direction: column; align-items: stretch; }
         }
     </style>
@@ -932,6 +935,7 @@
         <h1>🎀 ラブライバー集会場！掲示板</h1>
         <div class="header-controls">
             <span id="sync_status_badge" class="sync-badge offline">⏳ 接続確認中...</span>
+            <button type="button" id="admin_mode_btn" class="dark-toggle-btn" title="管理者モードのON/OFF切り替え">🛡️ 管理者モード</button>
             <button type="button" id="dark_mode_btn" class="dark-toggle-btn" title="ダークモード切り替え">🌙 ダーク</button>
             <label class="theme-switcher" title="画面全体のテーマカラーをグループカラーまたは推し色に変更">
                 <span>🎨 推し色：</span>
@@ -940,6 +944,16 @@
         </div>
     </div>
     <p style="margin-top: 4px; margin-bottom: 14px; font-size: 0.92em;">推しへの愛、ライブの感想、聖地巡礼レポなど自由に語ろう！</p>
+
+    <!-- 管理者モード認証バー -->
+    <div id="admin_login_bar" class="admin-login-bar" style="display: none;">
+        <div style="font-weight: bold; margin-bottom: 8px; color: #1890ff;">🛡️ 管理者モード認証</div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <input type="password" id="admin_mode_pass_input" placeholder="管理者マスターパスワードを入力" style="flex: 1; min-width: 200px;">
+            <button type="button" id="admin_login_confirm_btn" class="btn">認証してON</button>
+            <button type="button" id="admin_login_cancel_btn" class="btn btn-sub">キャンセル</button>
+        </div>
+    </div>
 
     <div id="msg_box" class="msg"></div>
 
@@ -1123,7 +1137,7 @@
                 <div class="form-row"><input type="password" id="delete_pass_input" placeholder="投稿パスワード / 管理者パス" required></div>
                 <button type="submit" class="btn btn-sub">削除</button>
             </form>
-            <div class="admin-hint">※ 管理者マスターパスワードでも削除可。</div>
+            <div id="delete_mode_hint" class="admin-hint">※ 投稿時のパスワードで削除可（管理者パスは管理者モードON時のみ有効）。</div>
         </div>
 
         <div class="box">
@@ -1133,17 +1147,17 @@
                 <div class="form-row"><input type="password" id="edit_pass_input" placeholder="投稿パスワード / 管理者パス" required></div>
                 <button type="submit" class="btn btn-sub">編集呼出</button>
             </form>
-            <div class="admin-hint">※ 管理者マスターパスワードでも編集可。</div>
+            <div id="edit_mode_hint" class="admin-hint">※ 投稿時のパスワードで編集可（管理者パスは管理者モードON時のみ有効）。</div>
         </div>
 
-        <div class="box">
+        <div id="pin_manage_box" class="box" style="display: none;">
             <h4 style="margin-top: 0;">📌 管理者ピン留め</h4>
             <form id="pin_form">
                 <div class="form-row"><input type="number" id="pin_id_input" placeholder="固定/解除する投稿番号" required></div>
                 <div class="form-row"><input type="password" id="pin_pass_input" placeholder="管理者マスターパスワード" required></div>
                 <button type="submit" class="btn btn-sub">固定切替</button>
             </form>
-            <div class="admin-hint">※ 最上部に固定表示（再実行で解除）。</div>
+            <div class="admin-hint">※ 管理者モードON時のみ利用可能。最上部に固定表示（再実行で解除）。</div>
         </div>
     </div>
 
@@ -1192,7 +1206,9 @@
         // 管理者用マスターパスワード設定（K_5298）
         // ============================================================
         const ADMIN_MASTER_PASSWORD_PLAIN = "K_5298";
+        const ADMIN_SESSION_KEY = 'lovelive_bbs_admin_mode_v1';
         let adminMasterPasswordHash = "";
+        let isAdminMode = false;
 
         const LOCAL_STORAGE_KEY = 'lovelive_bbs_posts_v1';
         const THEME_STORAGE_KEY = 'lovelive_bbs_theme_oshi_v1';
@@ -1207,7 +1223,7 @@
         const POST_COOLDOWN_SEC = 30;
         const PER_PAGE = 10;
         const MAX_OSHI_BADGES = 2;
-        const REPORT_HIDE_THRESHOLD = 3; // 通報3件以上で自動折りたたみ
+        const REPORT_HIDE_THRESHOLD = 3;
 
         const PRESET_TAGS = [
             'ライブ感想',
@@ -1397,6 +1413,87 @@
             expandedReplyIds: new Set()
         };
 
+        // ============================================================
+        // 管理者モード ON/OFF 制御
+        // ============================================================
+        function syncAdminModeUI() {
+            const btn = document.getElementById('admin_mode_btn');
+            const pinBox = document.getElementById('pin_manage_box');
+            const delHint = document.getElementById('delete_mode_hint');
+            const editHint = document.getElementById('edit_mode_hint');
+
+            if (btn) {
+                btn.classList.toggle('admin-active', isAdminMode);
+                btn.textContent = isAdminMode ? '🛡️ 管理者モード：ON（解除）' : '🛡️ 管理者モード';
+            }
+            if (pinBox) {
+                pinBox.style.display = isAdminMode ? 'block' : 'none';
+            }
+            if (delHint) {
+                delHint.textContent = isAdminMode
+                    ? '※ 管理者モードON：投稿パスワードまたは管理者マスターパスで削除可。'
+                    : '※ 投稿時のパスワードで削除可（管理者マスターパスは管理者モードON時のみ有効）。';
+            }
+            if (editHint) {
+                editHint.textContent = isAdminMode
+                    ? '※ 管理者モードON：投稿パスワードまたは管理者マスターパスで編集可。'
+                    : '※ 投稿時のパスワードで編集可（管理者マスターパスは管理者モードON時のみ有効）。';
+            }
+        }
+
+        function setAdminMode(active) {
+            isAdminMode = Boolean(active);
+            try {
+                if (isAdminMode) {
+                    sessionStorage.setItem(ADMIN_SESSION_KEY, '1');
+                } else {
+                    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+                }
+            } catch (e) {}
+            syncAdminModeUI();
+        }
+
+        function loadAdminMode() {
+            try {
+                isAdminMode = sessionStorage.getItem(ADMIN_SESSION_KEY) === '1';
+            } catch (e) {
+                isAdminMode = false;
+            }
+            syncAdminModeUI();
+        }
+
+        function toggleAdminLoginBar() {
+            if (isAdminMode) {
+                setAdminMode(false);
+                document.getElementById('admin_login_bar').style.display = 'none';
+                showMessage('🛡️ 管理者モードを解除しました。');
+                return;
+            }
+            const bar = document.getElementById('admin_login_bar');
+            const input = document.getElementById('admin_mode_pass_input');
+            const nextOpen = bar.style.display === 'none';
+            bar.style.display = nextOpen ? 'block' : 'none';
+            if (nextOpen) {
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        async function confirmAdminLogin() {
+            const input = document.getElementById('admin_mode_pass_input');
+            const inputHash = await hashPassword(input.value);
+            const masterHash = await ensureAdminHash();
+
+            if (masterHash && inputHash === masterHash) {
+                document.getElementById('admin_login_bar').style.display = 'none';
+                input.value = '';
+                setAdminMode(true);
+                showMessage('🛡️ 管理者モードがONになりました。ピン留めや管理者権限での編集・削除が可能です。');
+            } else {
+                showMessage('管理者マスターパスワードが一致しません。', true);
+            }
+        }
+
         function getOshiBadgeText(info) {
             return info.badgeLabel || `${info.name}推し`;
         }
@@ -1535,9 +1632,6 @@
             saveDraft();
         }
 
-        // ============================================================
-        // 下書き自動保存・復元
-        // ============================================================
         function saveDraft() {
             if (document.getElementById('edit_target_id').value) return;
             try {
@@ -1640,9 +1734,6 @@
             }
         }
 
-        // ============================================================
-        // ダークモード切替
-        // ============================================================
         function applyDarkMode(isDark) {
             document.body.classList.toggle('dark-mode', isDark);
             const btn = document.getElementById('dark_mode_btn');
@@ -1994,7 +2085,8 @@
             const inputHash = await hashPassword(inputPlain);
             const masterHash = await ensureAdminHash();
 
-            if (masterHash && inputHash === masterHash) {
+            // 管理者マスターパスワードは「管理者モードON」のときのみ有効
+            if (isAdminMode && masterHash && inputHash === masterHash) {
                 return 'admin';
             }
 
@@ -2373,7 +2465,7 @@
                     showMessage('削除中にエラーが発生しました。', true);
                 }
             } else {
-                showMessage('パスワードが一致しないか、パスワード未設定の投稿のため削除できません。', true);
+                showMessage('パスワードが一致しないか、管理者モードがOFFのため削除できません。', true);
             }
         }
 
@@ -2430,12 +2522,16 @@
                 const prefix = role === 'admin' ? '🛡️ 【管理者権限】' : '';
                 showMessage(`${prefix}投稿番号 ${editId} の編集モードです。上のフォームから内容を書き換えて送信してください。`);
             } else {
-                showMessage('パスワードが一致しないか、パスワード未設定の投稿のため編集できません。', true);
+                showMessage('パスワードが一致しないか、管理者モードがOFFのため編集できません。', true);
             }
         }
 
         async function handlePinSubmit(e) {
             e.preventDefault();
+            if (!isAdminMode) {
+                showMessage('ピン留め操作には「管理者モード」をONにする必要があります。', true);
+                return;
+            }
             const pinId = parseInt(document.getElementById('pin_id_input').value, 10);
             const pinPass = document.getElementById('pin_pass_input').value;
             const target = postsCache.find(p => Number(p.id) === pinId);
@@ -2473,6 +2569,8 @@
 
         async function toggleLike(id) {
             const numId = Number(id);
+            if (!Number.isFinite(numId)) return;
+
             const alreadyLiked = state.likedIds.has(numId);
             const delta = alreadyLiked ? -1 : 1;
 
@@ -2483,6 +2581,12 @@
             }
             saveIdSet(LIKED_IDS_STORAGE_KEY, state.likedIds);
 
+            const target = postsCache.find(p => Number(p.id) === numId);
+            if (target) {
+                target.likes = Math.max(0, (Number(target.likes) || 0) + delta);
+            }
+            render();
+
             if (useFirebase) {
                 try {
                     const likesRef = ref(db, `bbs_posts/${numId}/likes`);
@@ -2492,12 +2596,8 @@
                 } catch (err) {
                     console.error(err);
                 }
-            } else {
-                const target = postsCache.find(p => Number(p.id) === numId);
-                if (!target) return;
-                target.likes = Math.max(0, (Number(target.likes) || 0) + delta);
+            } else if (target) {
                 saveLocalPosts(postsCache);
-                render();
             }
         }
 
@@ -2996,6 +3096,7 @@
 
         window.addEventListener('DOMContentLoaded', async () => {
             await ensureAdminHash();
+            loadAdminMode();
             initSelects();
             filterOshiOptions();
             restoreDraftOrProfile();
@@ -3016,6 +3117,19 @@
                 themeSelect.value = savedTheme;
             }
             applyOshiTheme(savedTheme);
+
+            document.getElementById('admin_mode_btn').addEventListener('click', toggleAdminLoginBar);
+            document.getElementById('admin_login_confirm_btn').addEventListener('click', confirmAdminLogin);
+            document.getElementById('admin_login_cancel_btn').addEventListener('click', () => {
+                document.getElementById('admin_login_bar').style.display = 'none';
+                document.getElementById('admin_mode_pass_input').value = '';
+            });
+            document.getElementById('admin_mode_pass_input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    confirmAdminLogin();
+                }
+            });
 
             document.getElementById('dark_mode_btn').addEventListener('click', toggleDarkMode);
             document.getElementById('theme_oshi_select').addEventListener('change', (e) => changeThemeOshi(e.target.value));
