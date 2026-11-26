@@ -619,6 +619,11 @@
         .flex-forms > div {
             flex: 1;
         }
+        .admin-hint {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 6px;
+        }
         .backup-bar {
             background: #fafafa;
             border: 1px solid #ddd;
@@ -796,18 +801,20 @@
             <h4 style="margin-top: 0;">🗑️ 投稿削除</h4>
             <form id="delete_form">
                 <div class="form-row"><input type="number" id="delete_id_input" placeholder="削除対象番号" required></div>
-                <div class="form-row"><input type="password" id="delete_pass_input" placeholder="パスワード" required></div>
+                <div class="form-row"><input type="password" id="delete_pass_input" placeholder="投稿パスワード / 管理者パス" required></div>
                 <button type="submit" class="btn btn-sub">削除</button>
             </form>
+            <div class="admin-hint">※ 管理者マスターパスワードでも強制削除できます。</div>
         </div>
 
         <div class="box">
             <h4 style="margin-top: 0;">🔧 投稿編集</h4>
             <form id="edit_load_form">
                 <div class="form-row"><input type="number" id="edit_id_input" placeholder="編集対象番号" required></div>
-                <div class="form-row"><input type="password" id="edit_pass_input" placeholder="パスワード" required></div>
+                <div class="form-row"><input type="password" id="edit_pass_input" placeholder="投稿パスワード / 管理者パス" required></div>
                 <button type="submit" class="btn btn-sub">編集呼出</button>
             </form>
+            <div class="admin-hint">※ 管理者マスターパスワードでも編集できます。</div>
         </div>
     </div>
 
@@ -849,9 +856,16 @@
             measurementId: "G-X1WQFHC7LY"
         };
 
+        // ============================================================
+        // ★ 管理者用マスターパスワード設定（K_5298）
+        // ============================================================
+        const ADMIN_MASTER_PASSWORD_PLAIN = "K_5298";
+        let adminMasterPasswordHash = "";
+
         const LOCAL_STORAGE_KEY = 'lovelive_bbs_posts_v1';
         const THEME_STORAGE_KEY = 'lovelive_bbs_theme_oshi_v1';
         const COOLDOWN_STORAGE_KEY = 'lovelive_bbs_last_post_ts_v1';
+        const PROFILE_STORAGE_KEY = 'lovelive_bbs_user_profile_v1';
         const POST_COOLDOWN_SEC = 30; // 連投制限の待機秒数
         const PER_PAGE = 10;
 
@@ -1001,6 +1015,41 @@
             selectedImageDataUrl: null,
             likedIds: new Set()
         };
+
+        // 前回投稿した名前・シリーズ・推しメンバーの保存と復元
+        function saveUserProfile(name, category, oshi) {
+            try {
+                localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify({ name, category, oshi }));
+            } catch (e) {}
+        }
+
+        function loadUserProfile() {
+            try {
+                const raw = localStorage.getItem(PROFILE_STORAGE_KEY);
+                return raw ? JSON.parse(raw) : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function applySavedUserProfile() {
+            const prof = loadUserProfile();
+            if (!prof) return;
+            if (prof.name) {
+                document.getElementById('name_input').value = prof.name;
+            }
+            if (prof.category && CATEGORIES[prof.category] && prof.category !== 'all') {
+                document.getElementById('category_select').value = prof.category;
+                filterOshiOptions();
+            }
+            if (prof.oshi && MEMBERS[prof.oshi]) {
+                const oshiSelect = document.getElementById('oshi_select');
+                const opt = Array.from(oshiSelect.options).find(o => o.value === prof.oshi);
+                if (opt && !opt.disabled) {
+                    oshiSelect.value = prof.oshi;
+                }
+            }
+        }
 
         function getRemainingCooldownSec() {
             try {
@@ -1311,12 +1360,32 @@
             return plain;
         }
 
-        async function verifyPassword(inputPlain, storedPass) {
-            if (!inputPlain || !storedPass) return false;
-            if (storedPass.startsWith('sha256:')) {
-                return (await hashPassword(inputPlain)) === storedPass;
+        async function ensureAdminHash() {
+            if (!adminMasterPasswordHash && ADMIN_MASTER_PASSWORD_PLAIN) {
+                adminMasterPasswordHash = await hashPassword(ADMIN_MASTER_PASSWORD_PLAIN);
             }
-            return inputPlain === storedPass;
+            return adminMasterPasswordHash;
+        }
+
+        // 投稿パスワード または 管理者マスターパスワードの照合
+        // 戻り値: 'admin' | 'user' | null
+        async function verifyPostOrAdminPassword(inputPlain, storedPass) {
+            if (!inputPlain) return null;
+
+            const inputHash = await hashPassword(inputPlain);
+            const masterHash = await ensureAdminHash();
+
+            // 1. 管理者マスターパスワード一致チェック
+            if (masterHash && inputHash === masterHash) {
+                return 'admin';
+            }
+
+            // 2. 投稿者パスワード一致チェック
+            if (!storedPass) return null;
+            if (storedPass.startsWith('sha256:')) {
+                return inputHash === storedPass ? 'user' : null;
+            }
+            return inputPlain === storedPass ? 'user' : null;
         }
 
         function showMessage(text, isError = false) {
@@ -1488,6 +1557,7 @@
             document.getElementById('remove_image_cb').checked = false;
             toggleSpoilerLabelInput();
             clearSelectedImage();
+            applySavedUserProfile();
             if (state.cat !== 'all') {
                 document.getElementById('category_select').value = state.cat;
                 filterOshiOptions();
@@ -1568,6 +1638,7 @@
                         }
                     }
 
+                    saveUserProfile(name, category, oshi);
                     recordPostTimestamp();
                     state.page = 1;
                     resetForm();
@@ -1631,7 +1702,9 @@
                 showMessage('指定された投稿番号が見つかりません。', true);
                 return;
             }
-            if (await verifyPassword(deletePass, postsCache[idx].pass)) {
+
+            const role = await verifyPostOrAdminPassword(deletePass, postsCache[idx].pass);
+            if (role) {
                 try {
                     if (useFirebase) {
                         await remove(ref(db, `bbs_posts/${deleteId}`));
@@ -1642,7 +1715,8 @@
                     }
                     document.getElementById('delete_id_input').value = '';
                     document.getElementById('delete_pass_input').value = '';
-                    showMessage(`投稿番号 ${deleteId} を削除しました。`);
+                    const prefix = role === 'admin' ? '🛡️ 【管理者権限】' : '';
+                    showMessage(`${prefix}投稿番号 ${deleteId} を削除しました。`);
                 } catch (err) {
                     console.error(err);
                     showMessage('削除中にエラーが発生しました。', true);
@@ -1662,9 +1736,13 @@
                 showMessage('指定された投稿番号が見つかりません。', true);
                 return;
             }
-            if (await verifyPassword(editPass, target.pass)) {
+
+            const role = await verifyPostOrAdminPassword(editPass, target.pass);
+            if (role) {
                 document.getElementById('edit_target_id').value = target.id;
-                document.getElementById('form_title').textContent = `✏️ 投稿 No.${target.id} を編集中`;
+                document.getElementById('form_title').textContent = role === 'admin'
+                    ? `🛡️ 投稿 No.${target.id} を管理者編集中`
+                    : `✏️ 投稿 No.${target.id} を編集中`;
                 document.getElementById('cancel_edit_btn').style.display = 'inline-block';
 
                 document.getElementById('category_select').value = target.category || 'other';
@@ -1694,7 +1772,8 @@
                 updateCooldownUI();
                 setPostFormOpen(true);
                 document.getElementById('post_form_wrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
-                showMessage(`投稿番号 ${editId} の編集モードです。上のフォームから内容を書き換えて送信してください。`);
+                const prefix = role === 'admin' ? '🛡️ 【管理者権限】' : '';
+                showMessage(`${prefix}投稿番号 ${editId} の編集モードです。上のフォームから内容を書き換えて送信してください。`);
             } else {
                 showMessage('パスワードが一致しないか、パスワード未設定の投稿のため編集できません。', true);
             }
@@ -2034,9 +2113,11 @@
         }
 
         // イベントリスナー登録（type="module" スコープ対応）
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
+            await ensureAdminHash();
             initSelects();
             filterOshiOptions();
+            applySavedUserProfile();
             startCooldownWatcher();
 
             let savedTheme = 'default';
