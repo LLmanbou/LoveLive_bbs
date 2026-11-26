@@ -650,7 +650,7 @@
         <h1>🎀 ラブライバー集会場！掲示板</h1>
         <div class="header-controls">
             <span id="sync_status_badge" class="sync-badge offline">⏳ 接続確認中...</span>
-            <label class="theme-switcher" title="画面全体のテーマカラーを推し色に変更">
+            <label class="theme-switcher" title="画面全体のテーマカラーをグループカラーまたは推し色に変更">
                 <span>🎨 推し色テーマ：</span>
                 <select id="theme_oshi_select"></select>
             </label>
@@ -927,6 +927,16 @@
             hasu: '蓮ノ空女学院スクールアイドルクラブ',
             ikizulive: 'イキヅライブ！ LOVELIVE! BLUEBIRD',
             other: 'その他・シリーズ横断・ライブ感想'
+        };
+
+        // グループ別テーマカラー定義
+        const GROUP_THEMES = {
+            group_muse: { name: "μ's グループカラー", shortName: "μ's推し", bg: '#e4007f', color: '#ffffff' },
+            group_aqours: { name: 'Aqours グループカラー', shortName: 'Aqours推し', bg: '#00a0e9', color: '#ffffff' },
+            group_niji: { name: '虹ヶ咲 グループカラー', shortName: '虹ヶ咲推し', bg: '#f5c400', color: '#333333' },
+            group_liella: { name: 'Liella! グループカラー', shortName: 'Liella!推し', bg: '#9b51e0', color: '#ffffff' },
+            group_hasu: { name: '蓮ノ空 グループカラー', shortName: '蓮ノ空推し', bg: '#e84a7f', color: '#ffffff' },
+            group_ikizulive: { name: 'イキヅライブ！ グループカラー', shortName: 'イキヅライブ推し', bg: '#ff7a00', color: '#ffffff' }
         };
 
         const MEMBERS = {
@@ -1312,9 +1322,11 @@
             if (manifestLink) manifestLink.href = URL.createObjectURL(manifestBlob);
         }
 
-        function applyOshiTheme(oshiKey) {
+        function applyOshiTheme(themeKey) {
             const root = document.documentElement;
-            if (!oshiKey || oshiKey === 'default' || !MEMBERS[oshiKey] || oshiKey === 'none') {
+            const targetTheme = GROUP_THEMES[themeKey] || (themeKey && themeKey !== 'none' ? MEMBERS[themeKey] : null);
+
+            if (!themeKey || themeKey === 'default' || !targetTheme) {
                 root.style.setProperty('--theme-color', '#e4007f');
                 root.style.setProperty('--theme-text', '#ffffff');
                 root.style.setProperty('--theme-bg', '#fff5f8');
@@ -1325,9 +1337,8 @@
                 return;
             }
 
-            const member = MEMBERS[oshiKey];
-            const mainColor = member.bg;
-            const textColor = member.color;
+            const mainColor = targetTheme.bg;
+            const textColor = targetTheme.color;
             const bgColor = mixWithWhite(mainColor, 0.94);
             const borderColor = mixWithWhite(mainColor, 0.72);
             const badgeBg = mixWithWhite(mainColor, 0.86);
@@ -1340,15 +1351,15 @@
             root.style.setProperty('--theme-badge-bg', badgeBg);
             root.style.setProperty('--theme-badge-text', badgeText);
 
-            const shortName = member.name.split(' ')[1] || member.name;
-            updatePWATheme(mainColor, bgColor, shortName + '推し');
+            const shortName = targetTheme.shortName || ((targetTheme.name.split(' ')[1] || targetTheme.name) + '推し');
+            updatePWATheme(mainColor, bgColor, shortName);
         }
 
-        function changeThemeOshi(oshiKey) {
+        function changeThemeOshi(themeKey) {
             try {
-                localStorage.setItem(THEME_STORAGE_KEY, oshiKey);
+                localStorage.setItem(THEME_STORAGE_KEY, themeKey);
             } catch (e) {}
-            applyOshiTheme(oshiKey);
+            applyOshiTheme(themeKey);
         }
 
         async function hashPassword(plain) {
@@ -1445,13 +1456,20 @@
                 .map(([k, info]) => `<option value="${k}">${escapeHtml(info.name)}</option>`)
                 .join('');
 
+            const groupThemeOptionsHtml = Object.entries(GROUP_THEMES)
+                .map(([k, info]) => `<option value="${k}">${escapeHtml(info.name)}</option>`)
+                .join('');
+
             searchOshiSelect.innerHTML = '<option value="all">すべての推しメンバー</option>' +
                 Object.entries(MEMBERS)
                     .filter(([k]) => k !== 'none')
                     .map(([k, info]) => `<option value="${k}">${escapeHtml(info.name)}推し</option>`)
                     .join('');
 
-            themeOshiSelect.innerHTML = '<option value="default">デフォルト（ラブライブピンク）</option>' + memberOptionsHtml;
+            themeOshiSelect.innerHTML =
+                '<option value="default">デフォルト（ラブライブピンク）</option>' +
+                `<optgroup label="🌈 グループカラー">${groupThemeOptionsHtml}</optgroup>` +
+                `<optgroup label="💖 メンバーカラー">${memberOptionsHtml}</optgroup>`;
         }
 
         function filterOshiOptions() {
@@ -2125,7 +2143,7 @@
                 savedTheme = localStorage.getItem(THEME_STORAGE_KEY) || 'default';
             } catch (e) {}
             const themeSelect = document.getElementById('theme_oshi_select');
-            if (themeSelect && MEMBERS[savedTheme]) {
+            if (themeSelect && (GROUP_THEMES[savedTheme] || MEMBERS[savedTheme])) {
                 themeSelect.value = savedTheme;
             }
             applyOshiTheme(savedTheme);
