@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ラブライバー集会場！シリーズ別掲示板（リアルタイム同期・PWA版）</title>
+    <title>ラブライバー集会場！シリーズ別掲示板（リアルタイム同期・PWA完全版）</title>
     <!-- PWA（ホーム画面アプリ化・全画面起動）用メタタグ -->
     <meta id="meta_theme_color" name="theme-color" content="#e4007f">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,15 +19,32 @@
             --theme-border: #f3c6d8;
             --theme-badge-bg: #ffe0ef;
             --theme-badge-text: #c2006b;
+
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --text-sub: #666666;
+            --input-bg: #ffffff;
+            --input-border: #cccccc;
+            --soft-box-bg: #fafafa;
+        }
+        body.dark-mode {
+            --card-bg: #1f2128;
+            --text-main: #eceef2;
+            --text-sub: #a3a8b8;
+            --input-bg: #2a2d37;
+            --input-border: #444857;
+            --soft-box-bg: #262932;
+            background-color: #14161b !important;
+            color: var(--text-main);
         }
         body {
             font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
             background-color: var(--theme-bg);
-            color: #333;
-            max-width: 800px;
+            color: var(--text-main);
+            max-width: 820px;
             margin: 0 auto;
             padding: 20px;
-            transition: background-color 0.25s ease;
+            transition: background-color 0.25s ease, color 0.25s ease;
         }
         .header-top {
             display: flex;
@@ -42,7 +59,7 @@
         h1 {
             color: var(--theme-color);
             margin: 0;
-            font-size: 1.6em;
+            font-size: 1.55em;
         }
         .header-controls {
             display: flex;
@@ -72,11 +89,21 @@
             border-color: #ffccc7;
             color: #cf1322;
         }
+        .dark-toggle-btn {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--theme-border);
+            border-radius: 20px;
+            padding: 4px 11px;
+            font-size: 0.82em;
+            font-weight: bold;
+            cursor: pointer;
+        }
         .theme-switcher {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: #fff;
+            background: var(--card-bg);
             border: 2px solid var(--theme-color);
             border-radius: 20px;
             padding: 4px 12px;
@@ -88,14 +115,18 @@
             border: none;
             background: transparent;
             font-weight: bold;
-            color: #333;
+            color: var(--text-main);
             padding: 2px 4px;
             width: auto;
             cursor: pointer;
             outline: none;
         }
+        body.dark-mode .theme-switcher select option {
+            background: #1f2128;
+            color: #eceef2;
+        }
         .box {
-            background: #fff;
+            background: var(--card-bg);
             border: 1px solid var(--theme-border);
             border-radius: 8px;
             padding: 15px;
@@ -123,7 +154,7 @@
             filter: brightness(0.93);
         }
         .accordion-toggle-btn.sub-toggle {
-            background-color: #fff;
+            background-color: var(--card-bg);
             color: var(--theme-badge-text);
             border: 1px solid var(--theme-border);
             font-size: 0.9em;
@@ -133,34 +164,206 @@
         .msg {
             background: #e6f4ff;
             border-left: 5px solid #1890ff;
+            color: #003a8c;
             padding: 10px;
             font-weight: bold;
             margin-bottom: 15px;
             display: none;
+            border-radius: 4px;
         }
         .msg.error {
             background: #fff2f0;
             border-left-color: #ff4d4f;
             color: #cf1322;
         }
+        .unread-banner {
+            background: linear-gradient(90deg, var(--theme-badge-bg), var(--card-bg));
+            border: 1px solid var(--theme-color);
+            border-radius: 8px;
+            padding: 8px 14px;
+            margin-bottom: 14px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 0.88em;
+            font-weight: bold;
+        }
+        .new-badge {
+            background: #ff4d4f;
+            color: #ffffff;
+            font-size: 0.72em;
+            font-weight: bold;
+            padding: 1px 6px;
+            border-radius: 4px;
+            letter-spacing: 0.5px;
+            animation: pulseNew 1.8s infinite;
+        }
+        @keyframes pulseNew {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.65; }
+        }
+        .pinned-section {
+            background: linear-gradient(135deg, rgba(24, 144, 255, 0.08), var(--card-bg));
+            border: 2px solid #1890ff;
+            border-radius: 10px;
+            padding: 13px 15px;
+            margin-bottom: 18px;
+            display: none;
+        }
+        .pinned-title {
+            margin: 0 0 10px 0;
+            color: #1890ff;
+            font-size: 1.05em;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .pinned-badge {
+            background: #1890ff;
+            color: #ffffff;
+            font-size: 0.78em;
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
         .form-row {
             margin-bottom: 10px;
         }
-        .form-grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+        .oshi-picker-box {
+            background: var(--soft-box-bg);
+            border: 1px solid var(--theme-border);
+            border-radius: 6px;
+            padding: 8px 10px;
             margin-bottom: 10px;
+        }
+        .oshi-picker-top {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+        .oshi-picker-limit {
+            font-size: 0.78em;
+            color: var(--theme-badge-text);
+            font-weight: bold;
+        }
+        .oshi-selected-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .oshi-chip-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 14px;
+            font-size: 0.8em;
+            font-weight: bold;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+        }
+        .oshi-chip-remove {
+            background: rgba(0, 0, 0, 0.22);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 11px;
+            line-height: 14px;
+            padding: 0;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .oshi-badges-group {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px;
+        }
+        .w-oshi-tag {
+            background: #fff0f6;
+            border: 1px solid #ffadd2;
+            color: #c41d7f;
+            font-size: 0.72em;
+            font-weight: bold;
+            padding: 1px 6px;
+            border-radius: 8px;
+        }
+        .tag-selector-box {
+            background: var(--soft-box-bg);
+            border: 1px solid var(--theme-border);
+            border-radius: 6px;
+            padding: 8px 10px;
+            margin-bottom: 10px;
+        }
+        .tag-chip-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 6px;
+        }
+        .tag-select-chip {
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 1px solid var(--theme-border);
+            border-radius: 14px;
+            padding: 3px 10px;
+            font-size: 0.8em;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.12s ease;
+        }
+        .tag-select-chip.selected {
+            background: var(--theme-color);
+            color: var(--theme-text);
+            border-color: var(--theme-color);
+            font-weight: bold;
+        }
+        .post-tags-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 6px;
+        }
+        .post-tag-pill {
+            background: var(--theme-badge-bg);
+            color: var(--theme-badge-text);
+            border: 1px solid var(--theme-border);
+            border-radius: 12px;
+            padding: 1px 8px;
+            font-size: 0.78em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .post-tag-pill:hover {
+            filter: brightness(0.94);
+        }
+        .draft-status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.78em;
+            color: var(--text-sub);
+            margin-bottom: 8px;
         }
         input[type="text"], input[type="password"], input[type="number"], select, textarea {
             padding: 8px;
-            border: 1px solid #ccc;
+            background: var(--input-bg);
+            color: var(--text-main);
+            border: 1px solid var(--input-border);
             border-radius: 4px;
             width: 100%;
             box-sizing: border-box;
         }
         textarea {
-            height: 80px;
+            height: 85px;
             resize: vertical;
         }
         .btn {
@@ -202,7 +405,7 @@
             display: none;
         }
         .image-upload-box {
-            background: var(--theme-bg);
+            background: var(--soft-box-bg);
             border: 1px dashed var(--theme-color);
             border-radius: 6px;
             padding: 10px 12px;
@@ -228,9 +431,9 @@
             object-fit: cover;
         }
         .clear-file-btn {
-            background: #fff;
+            background: var(--card-bg);
             border: 1px solid #999;
-            color: #555;
+            color: var(--text-sub);
             border-radius: 4px;
             padding: 4px 8px;
             font-size: 0.8em;
@@ -250,7 +453,7 @@
             display: block;
         }
         .spoiler-controls {
-            background: #fff8eb;
+            background: rgba(250, 173, 20, 0.1);
             border: 1px dashed #faad14;
             border-radius: 6px;
             padding: 8px 12px;
@@ -269,28 +472,25 @@
             align-items: center;
             gap: 6px;
             font-weight: bold;
-            color: #ad6800;
+            color: #d48806;
             cursor: pointer;
         }
         .spoiler-tag-btn {
-            background: #fff;
+            background: var(--card-bg);
             border: 1px solid #d48806;
-            color: #ad6800;
+            color: #d48806;
             border-radius: 4px;
             padding: 4px 10px;
             font-size: 0.85em;
             font-weight: bold;
             cursor: pointer;
         }
-        .spoiler-tag-btn:hover {
-            background: #fffbe6;
-        }
         .spoiler-label-input {
             margin-top: 8px;
             display: none;
         }
         details.spoiler-box {
-            background: #fffbe6;
+            background: rgba(250, 173, 20, 0.12);
             border: 1px solid #ffe58f;
             border-radius: 6px;
             padding: 8px 12px;
@@ -299,7 +499,7 @@
         details.spoiler-box summary {
             cursor: pointer;
             font-weight: bold;
-            color: #ad6800;
+            color: #d48806;
             user-select: none;
             list-style: none;
             display: flex;
@@ -326,6 +526,19 @@
             border-bottom: 1px dashed #ffe58f;
             padding-bottom: 6px;
             margin-bottom: 8px;
+        }
+        details.reported-box {
+            background: rgba(255, 77, 79, 0.08);
+            border: 1px dashed #ff7875;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+        }
+        details.reported-box summary {
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #cf1322;
         }
         .inline-spoiler {
             background-color: #333;
@@ -360,7 +573,7 @@
             user-select: none;
         }
         .pickup-section {
-            background: linear-gradient(135deg, #fff9e6 0%, var(--theme-bg) 100%);
+            background: linear-gradient(135deg, rgba(250, 219, 20, 0.14) 0%, var(--card-bg) 100%);
             border: 2px solid #fadb14;
             border-radius: 10px;
             padding: 15px;
@@ -374,7 +587,7 @@
             font-size: 1.15em;
         }
         .pickup-card {
-            background: #ffffff;
+            background: var(--card-bg);
             border: 1px solid #ffe58f;
             border-radius: 6px;
             padding: 10px 14px;
@@ -407,7 +620,7 @@
         }
         .tab {
             padding: 6px 12px;
-            background: #fff;
+            background: var(--card-bg);
             border: 1px solid var(--theme-color);
             color: var(--theme-badge-text);
             border-radius: 20px;
@@ -420,23 +633,23 @@
             font-weight: bold;
         }
         .search-box {
-            background: #fff;
+            background: var(--card-bg);
             border: 1px solid var(--theme-border);
             border-radius: 8px;
             padding: 12px 15px;
             margin-bottom: 12px;
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
         }
         .search-box input[type="text"] {
             flex: 2;
-            min-width: 170px;
+            min-width: 160px;
         }
         .search-box select {
-            flex: 1.5;
-            min-width: 150px;
+            flex: 1.3;
+            min-width: 140px;
         }
         .search-actions {
             display: flex;
@@ -462,8 +675,8 @@
         }
         .spoiler-toggle-btn {
             border: 2px solid #faad14;
-            background: #fff;
-            color: #ad6800;
+            background: var(--card-bg);
+            color: #d48806;
         }
         .spoiler-toggle-btn.active {
             background: #faad14;
@@ -471,8 +684,8 @@
         }
         .image-toggle-btn {
             border: 2px solid #1890ff;
-            background: #fff;
-            color: #096dd9;
+            background: var(--card-bg);
+            color: #1890ff;
         }
         .image-toggle-btn.active {
             background: #1890ff;
@@ -480,7 +693,7 @@
         }
         .spoiler-hidden-note {
             font-size: 0.85em;
-            color: #ad6800;
+            color: #d48806;
             font-weight: bold;
         }
         .list-meta {
@@ -490,7 +703,7 @@
             align-items: center;
             gap: 8px;
             font-size: 0.9em;
-            color: #666;
+            color: var(--text-sub);
             margin-bottom: 12px;
         }
         .search-status {
@@ -498,8 +711,8 @@
             font-weight: bold;
         }
         .post-card {
-            background: #fff;
-            border: 1px solid #eee;
+            background: var(--card-bg);
+            border: 1px solid var(--theme-border);
             border-left: 5px solid var(--theme-color);
             border-radius: 6px;
             padding: 12px 15px;
@@ -507,7 +720,7 @@
         }
         .post-header {
             font-size: 0.9em;
-            color: #666;
+            color: var(--text-sub);
             margin-bottom: 6px;
             display: flex;
             flex-wrap: wrap;
@@ -535,23 +748,81 @@
         .reply-badge {
             background: #eef6ff;
             color: #0066cc;
-            padding: 2px 6px;
+            padding: 2px 8px;
             border-radius: 4px;
             font-weight: bold;
-            font-size: 0.9em;
+            font-size: 0.88em;
             display: inline-block;
             margin-bottom: 6px;
             text-decoration: none;
+            border: 1px solid #bae0ff;
         }
         .post-comment {
             white-space: pre-wrap;
-            line-height: 1.5;
+            line-height: 1.55;
             margin-bottom: 8px;
+            word-break: break-word;
         }
         .post-footer {
             display: flex;
-            justify-content: flex-end;
+            flex-wrap: wrap;
+            justify-content: space-between;
             align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .post-footer-left {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+        .post-footer-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+        .replies-toggle-btn {
+            background: var(--soft-box-bg);
+            border: 1px solid var(--theme-border);
+            color: var(--theme-badge-text);
+            border-radius: 16px;
+            padding: 3px 11px;
+            font-size: 0.82em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .replies-thread-box {
+            margin-top: 10px;
+            padding: 10px 12px;
+            background: var(--soft-box-bg);
+            border-left: 3px solid var(--theme-color);
+            border-radius: 0 6px 6px 0;
+            display: none;
+        }
+        .reply-tree-item {
+            padding: 7px 0;
+            border-bottom: 1px dashed var(--theme-border);
+            font-size: 0.9em;
+        }
+        .reply-tree-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .report-btn {
+            background: transparent;
+            border: 1px solid #ccc;
+            color: var(--text-sub);
+            border-radius: 14px;
+            padding: 3px 9px;
+            font-size: 0.78em;
+            cursor: pointer;
+        }
+        .report-btn.reported {
+            border-color: #ff7875;
+            color: #cf1322;
+            background: rgba(255, 77, 79, 0.08);
         }
         .like-btn {
             background: var(--theme-badge-bg);
@@ -582,6 +853,21 @@
             text-decoration: underline;
             margin-left: auto;
         }
+        /* リプライ先ホバー・タッププレビューポップアップ */
+        .reply-preview-tooltip {
+            position: fixed;
+            z-index: 9999;
+            max-width: 340px;
+            background: var(--card-bg);
+            color: var(--text-main);
+            border: 2px solid var(--theme-color);
+            border-radius: 8px;
+            padding: 10px 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+            font-size: 0.86em;
+            display: none;
+            pointer-events: none;
+        }
         .pagination {
             display: flex;
             flex-wrap: wrap;
@@ -593,7 +879,7 @@
         }
         .page-link {
             padding: 7px 13px;
-            background: #fff;
+            background: var(--card-bg);
             border: 1px solid var(--theme-border);
             color: var(--theme-badge-text);
             border-radius: 6px;
@@ -607,26 +893,22 @@
             color: var(--theme-text);
         }
         .page-link.disabled {
-            background: #f5f5f5;
-            border-color: #e0e0e0;
-            color: #aaa;
+            opacity: 0.45;
             pointer-events: none;
         }
         .flex-forms {
-            display: flex;
-            gap: 15px;
-        }
-        .flex-forms > div {
-            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
         }
         .admin-hint {
-            font-size: 0.8em;
-            color: #666;
+            font-size: 0.78em;
+            color: var(--text-sub);
             margin-top: 6px;
         }
         .backup-bar {
-            background: #fafafa;
-            border: 1px solid #ddd;
+            background: var(--soft-box-bg);
+            border: 1px solid var(--theme-border);
             border-radius: 8px;
             padding: 12px 15px;
             margin-top: 20px;
@@ -637,9 +919,9 @@
             justify-content: space-between;
             gap: 10px;
         }
-        @media (max-width: 600px) {
+        @media (max-width: 680px) {
             body { padding: 14px; }
-            .flex-forms, .form-grid-2 { grid-template-columns: 1fr; flex-direction: column; }
+            .flex-forms { grid-template-columns: 1fr; }
             .search-box { flex-direction: column; align-items: stretch; }
         }
     </style>
@@ -650,8 +932,9 @@
         <h1>🎀 ラブライバー集会場！掲示板</h1>
         <div class="header-controls">
             <span id="sync_status_badge" class="sync-badge offline">⏳ 接続確認中...</span>
+            <button type="button" id="dark_mode_btn" class="dark-toggle-btn" title="ダークモード切り替え">🌙 ダーク</button>
             <label class="theme-switcher" title="画面全体のテーマカラーをグループカラーまたは推し色に変更">
-                <span>🎨 推し色テーマ：</span>
+                <span>🎨 推し色：</span>
                 <select id="theme_oshi_select"></select>
             </label>
         </div>
@@ -660,6 +943,15 @@
 
     <div id="msg_box" class="msg"></div>
 
+    <!-- 未読・新着案内バー -->
+    <div id="unread_banner" class="unread-banner">
+        <span id="unread_banner_text">✨ 前回のアクセス以降に新しい投稿があります！</span>
+        <div style="display: flex; gap: 6px;">
+            <button type="button" id="jump_unread_btn" class="btn" style="padding: 4px 10px; font-size: 0.85em;">新着を見る</button>
+            <button type="button" id="mark_read_btn" class="clear-file-btn">既読にする</button>
+        </div>
+    </div>
+
     <!-- 新規投稿・編集フォーム（開閉ボタン付き） -->
     <button type="button" id="toggle_post_form_btn" class="accordion-toggle-btn">
         <span>📝 新規投稿フォームを開く</span>
@@ -667,19 +959,38 @@
     </button>
 
     <div id="post_form_wrapper" class="box" style="display: none;">
-        <h3 id="form_title" style="margin-top: 0;">📝 新規投稿 / リプライ</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h3 id="form_title" style="margin: 0;">📝 新規投稿 / リプライ</h3>
+            <span id="draft_status_text" style="font-size: 0.78em; color: var(--text-sub);">💾 下書き自動保存 ON</span>
+        </div>
+
         <form id="post_form">
             <input type="hidden" id="edit_target_id" value="">
 
-            <div class="form-grid-2">
-                <div>
-                    <label style="font-size: 0.85em; font-weight: bold;">シリーズ・カテゴリ：</label>
-                    <select id="category_select"></select>
+            <div class="form-row">
+                <label style="font-size: 0.85em; font-weight: bold;">シリーズ・カテゴリ：</label>
+                <select id="category_select"></select>
+            </div>
+
+            <!-- 推しバッジ選択（最大2つ / W推し対応） -->
+            <div class="oshi-picker-box">
+                <div class="oshi-picker-top">
+                    <label for="oshi_select" style="font-size: 0.85em; font-weight: bold;">
+                        💖 推しメンバー・箱推しバッジ（最大2つ・W推し対応）：
+                    </label>
+                    <span id="oshi_selection_count" class="oshi-picker-limit">選択中：0 / 2 個</span>
                 </div>
-                <div>
-                    <label style="font-size: 0.85em; font-weight: bold;">推しメンバーバッジ：</label>
-                    <select id="oshi_select"></select>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <select id="oshi_select" style="flex: 1;"></select>
+                    <button type="button" id="clear_oshi_btn" class="clear-file-btn" style="display: none;">すべて解除</button>
                 </div>
+                <div id="selected_oshi_chips" class="oshi-selected-chips"></div>
+            </div>
+
+            <!-- 定型ハッシュタグ選択（複数選択可） -->
+            <div class="tag-selector-box">
+                <div style="font-size: 0.85em; font-weight: bold;">🏷️ 話題タグ（任意・複数選択可）：</div>
+                <div id="preset_tag_chips" class="tag-chip-list"></div>
             </div>
 
             <div class="form-row" style="display: flex; gap: 10px;">
@@ -692,7 +1003,7 @@
             </div>
 
             <div class="form-row">
-                <textarea id="comment_input" placeholder="コメントを入力（改行も反映されます）" required></textarea>
+                <textarea id="comment_input" placeholder="コメントを入力（改行も反映されます・入力内容は自動で下書き保存されます）" required></textarea>
             </div>
 
             <!-- 画像添付エリア -->
@@ -710,7 +1021,7 @@
                 </div>
 
                 <div id="existing_image_wrap" style="display: none; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--theme-border);">
-                    <div style="font-size: 0.85em; color: #666; margin-bottom: 4px;">現在添付されている画像：</div>
+                    <div style="font-size: 0.85em; color: var(--text-sub); margin-bottom: 4px;">現在添付されている画像：</div>
                     <img id="existing_image_img" src="" alt="現在の添付画像" style="max-width: 140px; max-height: 100px; border-radius: 4px; display: block; margin-bottom: 4px;">
                     <label style="font-size: 0.85em; color: #cf1322; cursor: pointer;">
                         <input type="checkbox" id="remove_image_cb"> この添付画像を削除する
@@ -737,12 +1048,19 @@
             <!-- 連投防止クールタイム案内 -->
             <div id="cooldown_hint" class="cooldown-hint"></div>
 
-            <div class="form-row" style="display: flex; gap: 10px;">
-                <input type="password" id="pass_input" placeholder="編集・削除用パスワード（任意）" style="flex: 1;">
+            <div class="form-row" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <input type="password" id="pass_input" placeholder="編集・削除用パスワード（任意）" style="flex: 1; min-width: 180px;">
+                <button type="button" id="clear_draft_btn" class="btn btn-sub">下書きクリア</button>
                 <button type="submit" id="submit_btn" class="btn">投稿する</button>
                 <button type="button" id="cancel_edit_btn" class="btn btn-sub" style="display: none;">キャンセル</button>
             </div>
         </form>
+    </div>
+
+    <!-- 管理者ピン留め（固定表示）セクション -->
+    <div id="pinned_section" class="pinned-section">
+        <h3 class="pinned-title">📌 固定・お知らせ投稿</h3>
+        <div id="pinned_list"></div>
     </div>
 
     <!-- 人気の投稿ピックアップ（尊い！トップ3） -->
@@ -755,10 +1073,11 @@
     <h2 id="list-top">💬 投稿一覧（新着順）</h2>
     <div id="category_tabs" class="tabs"></div>
 
-    <!-- キーワード・推しメンバー検索フォーム -->
+    <!-- キーワード・推しメンバー・タグ検索フォーム -->
     <form id="search_form" class="search-box">
         <input type="text" id="search_q_input" placeholder="🔍 キーワード検索（名前・本文・推し名）">
         <select id="search_oshi_select"></select>
+        <select id="search_tag_select"></select>
         <div class="search-actions">
             <button type="submit" class="btn">検索</button>
             <button type="button" id="clear_search_btn" class="btn btn-sub" style="display: none;">解除</button>
@@ -790,9 +1109,9 @@
 
     <hr style="border: 0; border-top: 1px solid var(--theme-border); margin: 20px 0;">
 
-    <!-- 削除・編集指定フォーム（折りたたみ式） -->
+    <!-- 削除・編集・ピン留め指定フォーム（折りたたみ式） -->
     <button type="button" id="toggle_manage_form_btn" class="accordion-toggle-btn sub-toggle">
-        <span>🗑️ 投稿の削除・🔧 編集メニューを開く</span>
+        <span>🗑️ 投稿の削除・🔧 編集・📌 ピン留めメニューを開く</span>
         <span id="toggle_manage_form_icon">▼</span>
     </button>
 
@@ -804,7 +1123,7 @@
                 <div class="form-row"><input type="password" id="delete_pass_input" placeholder="投稿パスワード / 管理者パス" required></div>
                 <button type="submit" class="btn btn-sub">削除</button>
             </form>
-            <div class="admin-hint">※ 管理者マスターパスワードでも強制削除できます。</div>
+            <div class="admin-hint">※ 管理者マスターパスワードでも削除可。</div>
         </div>
 
         <div class="box">
@@ -814,7 +1133,17 @@
                 <div class="form-row"><input type="password" id="edit_pass_input" placeholder="投稿パスワード / 管理者パス" required></div>
                 <button type="submit" class="btn btn-sub">編集呼出</button>
             </form>
-            <div class="admin-hint">※ 管理者マスターパスワードでも編集できます。</div>
+            <div class="admin-hint">※ 管理者マスターパスワードでも編集可。</div>
+        </div>
+
+        <div class="box">
+            <h4 style="margin-top: 0;">📌 管理者ピン留め</h4>
+            <form id="pin_form">
+                <div class="form-row"><input type="number" id="pin_id_input" placeholder="固定/解除する投稿番号" required></div>
+                <div class="form-row"><input type="password" id="pin_pass_input" placeholder="管理者マスターパスワード" required></div>
+                <button type="submit" class="btn btn-sub">固定切替</button>
+            </form>
+            <div class="admin-hint">※ 最上部に固定表示（再実行で解除）。</div>
         </div>
     </div>
 
@@ -830,6 +1159,9 @@
         </div>
     </div>
 
+    <!-- リプライ先プレビュー用ツールチップ -->
+    <div id="reply_preview_tooltip" class="reply-preview-tooltip"></div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app.js";
         import {
@@ -843,7 +1175,7 @@
         } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-database.js";
 
         // ============================================================
-        // あなたの Firebase プロジェクト設定（lovelivebbs-90ccf）
+        // Firebase プロジェクト設定（lovelivebbs-90ccf）
         // ============================================================
         const FIREBASE_CONFIG = {
             apiKey: "AIzaSyAZPVdKRc7GhNt7BXa3EKFZa2QE2PCqCv8",
@@ -857,47 +1189,44 @@
         };
 
         // ============================================================
-        // ★ 管理者用マスターパスワード設定（K_5298）
+        // 管理者用マスターパスワード設定（K_5298）
         // ============================================================
         const ADMIN_MASTER_PASSWORD_PLAIN = "K_5298";
         let adminMasterPasswordHash = "";
 
         const LOCAL_STORAGE_KEY = 'lovelive_bbs_posts_v1';
         const THEME_STORAGE_KEY = 'lovelive_bbs_theme_oshi_v1';
+        const DARK_MODE_STORAGE_KEY = 'lovelive_bbs_dark_mode_v1';
         const COOLDOWN_STORAGE_KEY = 'lovelive_bbs_last_post_ts_v1';
         const PROFILE_STORAGE_KEY = 'lovelive_bbs_user_profile_v1';
-        const POST_COOLDOWN_SEC = 30; // 連投制限の待機秒数
-        const PER_PAGE = 10;
+        const LIKED_IDS_STORAGE_KEY = 'lovelive_bbs_liked_ids_v1';
+        const REPORTED_IDS_STORAGE_KEY = 'lovelive_bbs_reported_ids_v1';
+        const LAST_SEEN_ID_STORAGE_KEY = 'lovelive_bbs_last_seen_id_v1';
+        const DRAFT_STORAGE_KEY = 'lovelive_bbs_draft_v1';
 
-        // ============================================================
-        // ★ NGワード（禁止用語）リスト：必要に応じて単語を追加・編集してください
-        // ============================================================
+        const POST_COOLDOWN_SEC = 30;
+        const PER_PAGE = 10;
+        const MAX_OSHI_BADGES = 2;
+        const REPORT_HIDE_THRESHOLD = 3; // 通報3件以上で自動折りたたみ
+
+        const PRESET_TAGS = [
+            'ライブ感想',
+            '聖地巡礼',
+            'ガチャ報告',
+            'グッズ・痛バ',
+            '楽曲語り',
+            '生配信・ラジオ',
+            'イラスト・創作',
+            '雑談・交流'
+        ];
+
         const NG_WORDS = [
-            '死ね',
-            'しね',
-            '殺す',
-            'ころす',
-            '消えろ',
-            'キモい',
-            'きもい',
-            'バカ',
-            '馬鹿',
-            'アホ',
-            'クズ',
-            'ゴミ',
-            'カス',
-            'ブス',
-            'デブ',
-            'ガイジ',
-            '池沼',
-            '障害者',
-            'チケット転売',
-            '高額転売',
-            'LINE追加',
-            '副業紹介',
-            '稼げる副業',
-            '投資詐欺',
-            'オンラインカジノ'
+            '死ね', 'しね', '殺す', 'ころす', '消えろ',
+            'キモい', 'きもい', 'バカ', '馬鹿', 'アホ',
+            'クズ', 'ゴミ', 'カス', 'ブス', 'デブ',
+            'ガイジ', '池沼', '障害者',
+            'チケット転売', '高額転売', 'LINE追加',
+            '副業紹介', '稼げる副業', '投資詐欺', 'オンラインカジノ'
         ];
 
         function normalizeForNgCheck(str) {
@@ -929,7 +1258,6 @@
             other: 'その他・シリーズ横断・ライブ感想'
         };
 
-        // グループ別テーマカラー定義
         const GROUP_THEMES = {
             group_muse: { name: "μ's グループカラー", shortName: "μ's推し", bg: '#e4007f', color: '#ffffff' },
             group_aqours: { name: 'Aqours グループカラー', shortName: 'Aqours推し', bg: '#00a0e9', color: '#ffffff' },
@@ -940,7 +1268,13 @@
         };
 
         const MEMBERS = {
-            none: { name: '選択なし（箱推し・DD）', bg: '#e0e0e0', color: '#333333', group: 'all' },
+            none: { name: '選択なし（シリーズ全体箱推し・DD）', bg: '#e0e0e0', color: '#333333', group: 'all' },
+            hako_muse: { name: "μ's箱推し", badgeLabel: "μ's箱推し", bg: '#e4007f', color: '#ffffff', group: 'muse', isGroup: true },
+            hako_aqours: { name: 'Aqours箱推し', badgeLabel: 'Aqours箱推し', bg: '#00a0e9', color: '#ffffff', group: 'aqours', isGroup: true },
+            hako_niji: { name: '虹ヶ咲箱推し', badgeLabel: '虹ヶ咲箱推し', bg: '#f5c400', color: '#333333', group: 'niji', isGroup: true },
+            hako_liella: { name: 'Liella!箱推し', badgeLabel: 'Liella!箱推し', bg: '#9b51e0', color: '#ffffff', group: 'liella', isGroup: true },
+            hako_hasu: { name: '蓮ノ空箱推し', badgeLabel: '蓮ノ空箱推し', bg: '#e84a7f', color: '#ffffff', group: 'hasu', isGroup: true },
+            hako_ikizulive: { name: 'イキヅライブ箱推し', badgeLabel: 'イキヅライブ箱推し', bg: '#ff7a00', color: '#ffffff', group: 'ikizulive', isGroup: true },
             // μ's
             honoka: { name: '高坂 穂乃果', bg: '#ffa300', color: '#ffffff', group: 'muse' },
             eli: { name: '絢瀬 絵里', bg: '#36b3dd', color: '#ffffff', group: 'muse' },
@@ -1010,26 +1344,292 @@
             shion: { name: '佐々木 翔音', bg: '#b0bec5', color: '#333333', group: 'ikizulive' }
         };
 
+        function loadIdSet(storageKey) {
+            try {
+                const raw = localStorage.getItem(storageKey);
+                const arr = raw ? JSON.parse(raw) : [];
+                return new Set(Array.isArray(arr) ? arr.map(Number) : []);
+            } catch (e) {
+                return new Set();
+            }
+        }
+
+        function saveIdSet(storageKey, setObj) {
+            try {
+                localStorage.setItem(storageKey, JSON.stringify([...setObj]));
+            } catch (e) {}
+        }
+
+        function loadLastSeenId() {
+            try {
+                return Number(localStorage.getItem(LAST_SEEN_ID_STORAGE_KEY) || 0);
+            } catch (e) {
+                return 0;
+            }
+        }
+
+        function saveLastSeenId(maxId) {
+            try {
+                localStorage.setItem(LAST_SEEN_ID_STORAGE_KEY, String(maxId));
+            } catch (e) {}
+        }
+
         let db = null;
         let useFirebase = false;
         let postsCache = [];
         let cooldownTimerId = null;
+        let initialLastSeenId = loadLastSeenId();
+        let hasRecordedInitialSeen = false;
 
         let state = {
             cat: 'all',
             q: '',
             oshi: 'all',
+            tag: 'all',
             hideSpoiler: false,
             onlyImage: false,
             page: 1,
             selectedImageDataUrl: null,
-            likedIds: new Set()
+            selectedOshis: [],
+            selectedTags: [],
+            likedIds: loadIdSet(LIKED_IDS_STORAGE_KEY),
+            reportedIds: loadIdSet(REPORTED_IDS_STORAGE_KEY),
+            expandedReplyIds: new Set()
         };
 
-        // 前回投稿した名前・シリーズ・推しメンバーの保存と復元
-        function saveUserProfile(name, category, oshi) {
+        function getOshiBadgeText(info) {
+            return info.badgeLabel || `${info.name}推し`;
+        }
+
+        function getPostOshiKeys(post) {
+            let rawList = [];
+            if (Array.isArray(post?.oshis)) {
+                rawList = post.oshis;
+            } else if (typeof post?.oshis === 'string' && post.oshis) {
+                rawList = post.oshis.split(',');
+            } else if (typeof post?.oshi === 'string' && post.oshi) {
+                rawList = [post.oshi];
+            }
+            const uniqueValid = [];
+            for (const key of rawList) {
+                if (key && key !== 'none' && MEMBERS[key] && !uniqueValid.includes(key)) {
+                    uniqueValid.push(key);
+                    if (uniqueValid.length >= MAX_OSHI_BADGES) break;
+                }
+            }
+            return uniqueValid;
+        }
+
+        function getPostTags(post) {
+            if (Array.isArray(post?.tags)) {
+                return post.tags.filter(t => typeof t === 'string' && t.trim() !== '');
+            }
+            return [];
+        }
+
+        function buildOshiBadgesHtml(post) {
+            const keys = getPostOshiKeys(post);
+            if (keys.length === 0) return '';
+            const badges = keys.map(k => {
+                const info = MEMBERS[k];
+                return `<span class="oshi-badge" style="background-color:${info.bg};color:${info.color};">♥ ${escapeHtml(getOshiBadgeText(info))}</span>`;
+            }).join('');
+            const wTag = keys.length >= 2 ? '<span class="w-oshi-tag">W推し</span>' : '';
+            return `<span class="oshi-badges-group">${badges}${wTag}</span>`;
+        }
+
+        function buildPostTagsHtml(post) {
+            const tags = getPostTags(post);
+            if (tags.length === 0) return '';
+            return `<div class="post-tags-row">${tags.map(t => `<span class="post-tag-pill" data-filter-tag="${escapeHtml(t)}">#${escapeHtml(t)}</span>`).join('')}</div>`;
+        }
+
+        function buildPostBorderStyle(post) {
+            const keys = getPostOshiKeys(post);
+            if (keys.length >= 2) {
+                const c1 = MEMBERS[keys[0]].bg;
+                const c2 = MEMBERS[keys[1]].bg;
+                return `border-image: linear-gradient(180deg, ${c1} 50%, ${c2} 50%) 1;`;
+            }
+            if (keys.length === 1) {
+                return `border-left-color:${MEMBERS[keys[0]].bg};`;
+            }
+            return '';
+        }
+
+        function renderPresetTagChips() {
+            const box = document.getElementById('preset_tag_chips');
+            box.innerHTML = PRESET_TAGS.map(tag => {
+                const active = state.selectedTags.includes(tag) ? 'selected' : '';
+                return `<button type="button" class="tag-select-chip ${active}" data-toggle-tag="${escapeHtml(tag)}">#${escapeHtml(tag)}</button>`;
+            }).join('');
+        }
+
+        function togglePresetTag(tag) {
+            if (state.selectedTags.includes(tag)) {
+                state.selectedTags = state.selectedTags.filter(t => t !== tag);
+            } else {
+                state.selectedTags.push(tag);
+            }
+            renderPresetTagChips();
+            saveDraft();
+        }
+
+        function renderSelectedOshiChips() {
+            const chipsBox = document.getElementById('selected_oshi_chips');
+            const countLabel = document.getElementById('oshi_selection_count');
+            const clearBtn = document.getElementById('clear_oshi_btn');
+            const selectEl = document.getElementById('oshi_select');
+
+            const count = state.selectedOshis.length;
+            const wLabel = count === 2 ? '・W推し！' : '';
+            countLabel.textContent = `選択中：${count} / ${MAX_OSHI_BADGES} 個${wLabel}`;
+            clearBtn.style.display = count > 0 ? 'inline-block' : 'none';
+            selectEl.disabled = count >= MAX_OSHI_BADGES;
+
+            if (count === 0) {
+                chipsBox.innerHTML = '<span style="font-size:0.78em;color:var(--text-sub);">※ プルダウンから1つまたは2つ選ぶとバッジが追加されます（未選択でも投稿可）。</span>';
+                return;
+            }
+
+            chipsBox.innerHTML = state.selectedOshis.map(key => {
+                const info = MEMBERS[key];
+                if (!info) return '';
+                return `
+                    <span class="oshi-chip-item" style="background-color:${info.bg};color:${info.color};">
+                        <span>♥ ${escapeHtml(getOshiBadgeText(info))}</span>
+                        <button type="button" class="oshi-chip-remove" data-remove-oshi="${escapeHtml(key)}" title="このバッジを外す">×</button>
+                    </span>
+                `;
+            }).join('');
+        }
+
+        function handleOshiSelectChange(e) {
+            const val = e.target.value;
+            e.target.value = 'none';
+            if (!val || val === 'none' || !MEMBERS[val]) return;
+
+            if (state.selectedOshis.includes(val)) {
+                showMessage('その推しバッジはすでに選択されています。', true);
+                return;
+            }
+            if (state.selectedOshis.length >= MAX_OSHI_BADGES) {
+                showMessage(`推しバッジは最大 ${MAX_OSHI_BADGES} つまで選べます。外したいバッジの × を押してください。`, true);
+                return;
+            }
+
+            state.selectedOshis.push(val);
+            renderSelectedOshiChips();
+            saveDraft();
+        }
+
+        function removeSelectedOshi(key) {
+            state.selectedOshis = state.selectedOshis.filter(k => k !== key);
+            renderSelectedOshiChips();
+            saveDraft();
+        }
+
+        function clearSelectedOshis() {
+            state.selectedOshis = [];
+            renderSelectedOshiChips();
+            saveDraft();
+        }
+
+        // ============================================================
+        // 下書き自動保存・復元
+        // ============================================================
+        function saveDraft() {
+            // 編集中は下書き上書きしない
+            if (document.getElementById('edit_target_id').value) return;
             try {
-                localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify({ name, category, oshi }));
+                const draft = {
+                    category: document.getElementById('category_select').value,
+                    oshis: state.selectedOshis,
+                    tags: state.selectedTags,
+                    name: document.getElementById('name_input').value,
+                    replyTo: document.getElementById('reply_to_input').value,
+                    comment: document.getElementById('comment_input').value,
+                    isSpoiler: document.getElementById('is_spoiler_cb').checked,
+                    spoilerLabel: document.getElementById('spoiler_label_input').value
+                };
+                localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+                const statusEl = document.getElementById('draft_status_text');
+                if (statusEl) statusEl.textContent = '💾 下書き保存済み';
+            } catch (e) {}
+        }
+
+        function clearDraft(alsoResetInputs = false) {
+            try {
+                localStorage.removeItem(DRAFT_STORAGE_KEY);
+            } catch (e) {}
+            if (alsoResetInputs) {
+                document.getElementById('comment_input').value = '';
+                document.getElementById('reply_to_input').value = '';
+                document.getElementById('is_spoiler_cb').checked = false;
+                document.getElementById('spoiler_label_input').value = '';
+                state.selectedTags = [];
+                renderPresetTagChips();
+                toggleSpoilerLabelInput();
+                clearSelectedImage();
+                showMessage('下書きをクリアしました。');
+            }
+        }
+
+        function restoreDraftOrProfile() {
+            try {
+                const rawDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+                if (rawDraft) {
+                    const d = JSON.parse(rawDraft);
+                    if (d && (d.comment || d.replyTo || (d.tags && d.tags.length > 0) || d.spoilerLabel)) {
+                        if (d.category && CATEGORIES[d.category] && d.category !== 'all') {
+                            document.getElementById('category_select').value = d.category;
+                            filterOshiOptions();
+                        }
+                        if (d.name) document.getElementById('name_input').value = d.name;
+                        if (d.replyTo) document.getElementById('reply_to_input').value = d.replyTo;
+                        if (d.comment) document.getElementById('comment_input').value = d.comment;
+                        if (Array.isArray(d.oshis)) {
+                            state.selectedOshis = d.oshis.filter(k => MEMBERS[k] && k !== 'none').slice(0, MAX_OSHI_BADGES);
+                        }
+                        if (Array.isArray(d.tags)) {
+                            state.selectedTags = d.tags.filter(t => PRESET_TAGS.includes(t));
+                        }
+                        document.getElementById('is_spoiler_cb').checked = Boolean(d.isSpoiler);
+                        document.getElementById('spoiler_label_input').value = d.spoilerLabel || '';
+                        toggleSpoilerLabelInput();
+                        renderSelectedOshiChips();
+                        renderPresetTagChips();
+                        document.getElementById('draft_status_text').textContent = '📝 前回の書きかけ下書きを復元しました';
+                        return;
+                    }
+                }
+            } catch (e) {}
+
+            // 下書きがない場合は前回投稿プロフィールを復元
+            const prof = loadUserProfile();
+            if (!prof) {
+                state.selectedOshis = [];
+                state.selectedTags = [];
+                renderSelectedOshiChips();
+                renderPresetTagChips();
+                return;
+            }
+            if (prof.name) document.getElementById('name_input').value = prof.name;
+            if (prof.category && CATEGORIES[prof.category] && prof.category !== 'all') {
+                document.getElementById('category_select').value = prof.category;
+                filterOshiOptions();
+            }
+            const savedList = Array.isArray(prof.oshis) ? prof.oshis : (prof.oshi ? [prof.oshi] : []);
+            state.selectedOshis = savedList.filter(k => k && k !== 'none' && MEMBERS[k]).slice(0, MAX_OSHI_BADGES);
+            state.selectedTags = [];
+            renderSelectedOshiChips();
+            renderPresetTagChips();
+        }
+
+        function saveUserProfile(name, category, oshis) {
+            try {
+                const list = Array.isArray(oshis) ? oshis.slice(0, MAX_OSHI_BADGES) : [];
+                localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify({ name, category, oshis: list }));
             } catch (e) {}
         }
 
@@ -1042,23 +1642,23 @@
             }
         }
 
-        function applySavedUserProfile() {
-            const prof = loadUserProfile();
-            if (!prof) return;
-            if (prof.name) {
-                document.getElementById('name_input').value = prof.name;
+        // ============================================================
+        // ダークモード切替
+        // ============================================================
+        function applyDarkMode(isDark) {
+            document.body.classList.toggle('dark-mode', isDark);
+            const btn = document.getElementById('dark_mode_btn');
+            if (btn) {
+                btn.textContent = isDark ? '☀️ ライト' : '🌙 ダーク';
             }
-            if (prof.category && CATEGORIES[prof.category] && prof.category !== 'all') {
-                document.getElementById('category_select').value = prof.category;
-                filterOshiOptions();
-            }
-            if (prof.oshi && MEMBERS[prof.oshi]) {
-                const oshiSelect = document.getElementById('oshi_select');
-                const opt = Array.from(oshiSelect.options).find(o => o.value === prof.oshi);
-                if (opt && !opt.disabled) {
-                    oshiSelect.value = prof.oshi;
-                }
-            }
+        }
+
+        function toggleDarkMode() {
+            const next = !document.body.classList.contains('dark-mode');
+            try {
+                localStorage.setItem(DARK_MODE_STORAGE_KEY, next ? '1' : '0');
+            } catch (e) {}
+            applyDarkMode(next);
         }
 
         function getRemainingCooldownSec() {
@@ -1122,6 +1722,19 @@
             badge.textContent = text;
         }
 
+        function handlePostsLoaded() {
+            const maxId = postsCache.reduce((m, p) => Math.max(m, Number(p.id) || 0), 0);
+            if (!hasRecordedInitialSeen) {
+                hasRecordedInitialSeen = true;
+                // 初回アクセス時は現在の最新番号を既読として記録し、2回目以降に差分NEWを出す
+                if (initialLastSeenId === 0 && maxId > 0) {
+                    initialLastSeenId = maxId;
+                    saveLastSeenId(maxId);
+                }
+            }
+            render();
+        }
+
         function initFirebaseOrLocal() {
             const isConfigured = FIREBASE_CONFIG.apiKey &&
                 !FIREBASE_CONFIG.apiKey.startsWith('YOUR_') &&
@@ -1131,8 +1744,8 @@
             if (!isConfigured) {
                 useFirebase = false;
                 postsCache = loadLocalPosts();
-                updateSyncBadge('offline', '💾 ローカル保存モード（Firebase未設定）');
-                render();
+                updateSyncBadge('offline', '💾 ローカル保存モード');
+                handlePostsLoaded();
                 return;
             }
 
@@ -1152,17 +1765,17 @@
                         postsCache = Object.values(val).filter(Boolean);
                     }
                     updateSyncBadge('online', '🟢 リアルタイム同期中');
-                    render();
+                    handlePostsLoaded();
                 }, (error) => {
                     console.error('Firebase read error:', error);
-                    updateSyncBadge('error', '⚠️ 接続エラー（ルール・URL確認）');
+                    updateSyncBadge('error', '⚠️ 接続エラー');
                 });
             } catch (err) {
                 console.error('Firebase init error:', err);
                 useFirebase = false;
                 postsCache = loadLocalPosts();
                 updateSyncBadge('error', '⚠️ Firebase初期化エラー');
-                render();
+                handlePostsLoaded();
             }
         }
 
@@ -1233,12 +1846,12 @@
             const isHidden = wrapper.style.display === 'none';
 
             if (isHidden) {
-                wrapper.style.display = 'flex';
-                btn.firstElementChild.textContent = '🗑️ 投稿の削除・🔧 編集メニューを閉じる';
+                wrapper.style.display = 'grid';
+                btn.firstElementChild.textContent = '🗑️ 投稿の削除・🔧 編集・📌 ピン留めメニューを閉じる';
                 icon.textContent = '▲';
             } else {
                 wrapper.style.display = 'none';
-                btn.firstElementChild.textContent = '🗑️ 投稿の削除・🔧 編集メニューを開く';
+                btn.firstElementChild.textContent = '🗑️ 投稿の削除・🔧 編集・📌 ピン留めメニューを開く';
                 icon.textContent = '▼';
             }
         }
@@ -1351,7 +1964,7 @@
             root.style.setProperty('--theme-badge-bg', badgeBg);
             root.style.setProperty('--theme-badge-text', badgeText);
 
-            const shortName = targetTheme.shortName || ((targetTheme.name.split(' ')[1] || targetTheme.name) + '推し');
+            const shortName = targetTheme.shortName || (targetTheme.isGroup ? targetTheme.name : ((targetTheme.name.split(' ')[1] || targetTheme.name) + '推し'));
             updatePWATheme(mainColor, bgColor, shortName);
         }
 
@@ -1378,20 +1991,16 @@
             return adminMasterPasswordHash;
         }
 
-        // 投稿パスワード または 管理者マスターパスワードの照合
-        // 戻り値: 'admin' | 'user' | null
         async function verifyPostOrAdminPassword(inputPlain, storedPass) {
             if (!inputPlain) return null;
 
             const inputHash = await hashPassword(inputPlain);
             const masterHash = await ensureAdminHash();
 
-            // 1. 管理者マスターパスワード一致チェック
             if (masterHash && inputHash === masterHash) {
                 return 'admin';
             }
 
-            // 2. 投稿者パスワード一致チェック
             if (!storedPass) return null;
             if (storedPass.startsWith('sha256:')) {
                 return inputHash === storedPass ? 'user' : null;
@@ -1440,6 +2049,7 @@
             const catSelect = document.getElementById('category_select');
             const oshiSelect = document.getElementById('oshi_select');
             const searchOshiSelect = document.getElementById('search_oshi_select');
+            const searchTagSelect = document.getElementById('search_tag_select');
             const themeOshiSelect = document.getElementById('theme_oshi_select');
 
             catSelect.innerHTML = Object.entries(CATEGORIES)
@@ -1451,8 +2061,8 @@
                 .map(([k, info]) => `<option value="${k}" data-group="${info.group}">${escapeHtml(info.name)}</option>`)
                 .join('');
 
-            const memberOptionsHtml = Object.entries(MEMBERS)
-                .filter(([k]) => k !== 'none')
+            const memberOnlyOptionsHtml = Object.entries(MEMBERS)
+                .filter(([k, info]) => k !== 'none' && !info.isGroup)
                 .map(([k, info]) => `<option value="${k}">${escapeHtml(info.name)}</option>`)
                 .join('');
 
@@ -1460,16 +2070,27 @@
                 .map(([k, info]) => `<option value="${k}">${escapeHtml(info.name)}</option>`)
                 .join('');
 
-            searchOshiSelect.innerHTML = '<option value="all">すべての推しメンバー</option>' +
-                Object.entries(MEMBERS)
-                    .filter(([k]) => k !== 'none')
-                    .map(([k, info]) => `<option value="${k}">${escapeHtml(info.name)}推し</option>`)
-                    .join('');
+            const searchGroupOshiHtml = Object.entries(MEMBERS)
+                .filter(([k, info]) => info.isGroup)
+                .map(([k, info]) => `<option value="${k}">${escapeHtml(getOshiBadgeText(info))}</option>`)
+                .join('');
+
+            const searchMemberOshiHtml = Object.entries(MEMBERS)
+                .filter(([k, info]) => k !== 'none' && !info.isGroup)
+                .map(([k, info]) => `<option value="${k}">${escapeHtml(getOshiBadgeText(info))}</option>`)
+                .join('');
+
+            searchOshiSelect.innerHTML = '<option value="all">すべての推し・箱推し</option>' +
+                `<optgroup label="🌈 グループ箱推し">${searchGroupOshiHtml}</optgroup>` +
+                `<optgroup label="💖 メンバー推し">${searchMemberOshiHtml}</optgroup>`;
+
+            searchTagSelect.innerHTML = '<option value="all">すべての話題タグ</option>' +
+                PRESET_TAGS.map(t => `<option value="${escapeHtml(t)}">#${escapeHtml(t)}</option>`).join('');
 
             themeOshiSelect.innerHTML =
                 '<option value="default">デフォルト（ラブライブピンク）</option>' +
                 `<optgroup label="🌈 グループカラー">${groupThemeOptionsHtml}</optgroup>` +
-                `<optgroup label="💖 メンバーカラー">${memberOptionsHtml}</optgroup>`;
+                `<optgroup label="💖 メンバーカラー">${memberOnlyOptionsHtml}</optgroup>`;
         }
 
         function filterOshiOptions() {
@@ -1485,9 +2106,7 @@
                     opt.disabled = true;
                 }
             }
-            if (oshiSelect.options[oshiSelect.selectedIndex]?.disabled) {
-                oshiSelect.value = 'none';
-            }
+            oshiSelect.value = 'none';
         }
 
         function toggleSpoilerLabelInput() {
@@ -1505,6 +2124,7 @@
             textarea.value = text.substring(0, start) + replacement + text.substring(end);
             textarea.focus();
             textarea.setSelectionRange(start + 9, start + 9 + selected.length);
+            saveDraft();
         }
 
         function previewImage(input) {
@@ -1558,6 +2178,7 @@
             replyInput.value = id;
             replyInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
             document.getElementById('comment_input').focus();
+            saveDraft();
         }
 
         function resetForm() {
@@ -1573,9 +2194,13 @@
             document.getElementById('spoiler_label_input').value = '';
             document.getElementById('existing_image_wrap').style.display = 'none';
             document.getElementById('remove_image_cb').checked = false;
+            state.selectedOshis = [];
+            state.selectedTags = [];
+            renderSelectedOshiChips();
+            renderPresetTagChips();
             toggleSpoilerLabelInput();
             clearSelectedImage();
-            applySavedUserProfile();
+            restoreDraftOrProfile();
             if (state.cat !== 'all') {
                 document.getElementById('category_select').value = state.cat;
                 filterOshiOptions();
@@ -1604,7 +2229,9 @@
             }
 
             const category = document.getElementById('category_select').value;
-            const oshi = document.getElementById('oshi_select').value;
+            const oshisToSave = state.selectedOshis.slice(0, MAX_OSHI_BADGES);
+            const primaryOshi = oshisToSave[0] || 'none';
+            const tagsToSave = [...state.selectedTags];
             const name = document.getElementById('name_input').value.trim();
             const replyRaw = document.getElementById('reply_to_input').value.trim();
             const replyTo = replyRaw !== '' ? parseInt(replyRaw, 10) : null;
@@ -1619,7 +2246,6 @@
                 return;
             }
 
-            // NGワードチェック（名前・コメント・ネタバレ注意タイトル）
             const matchedNg = findMatchedNgWord(name, comment, spoilerLabel);
             if (matchedNg) {
                 showMessage(`🚫 不適切な表現・禁止ワード（「${matchedNg}」）が含まれているため投稿できません。内容を修正してください。`, true);
@@ -1634,7 +2260,9 @@
                     const newPost = {
                         id: newId,
                         category,
-                        oshi,
+                        oshi: primaryOshi,
+                        oshis: oshisToSave,
+                        tags: tagsToSave,
                         reply_to: replyTo,
                         name,
                         comment,
@@ -1643,7 +2271,9 @@
                         spoiler_label: spoilerLabel,
                         date: nowFormatted(),
                         pass: hashedPass,
-                        likes: 0
+                        likes: 0,
+                        reports: 0,
+                        pinned: false
                     };
 
                     if (useFirebase) {
@@ -1656,7 +2286,12 @@
                         }
                     }
 
-                    saveUserProfile(name, category, oshi);
+                    // 自分の投稿は既読扱いにする
+                    initialLastSeenId = Math.max(initialLastSeenId, newId);
+                    saveLastSeenId(initialLastSeenId);
+
+                    saveUserProfile(name, category, oshisToSave);
+                    clearDraft(false);
                     recordPostTimestamp();
                     state.page = 1;
                     resetForm();
@@ -1679,7 +2314,9 @@
                     const nextPass = rawPass !== '' ? await hashPassword(rawPass) : (target.pass || '');
                     const updates = {
                         category,
-                        oshi,
+                        oshi: primaryOshi,
+                        oshis: oshisToSave,
+                        tags: tagsToSave,
                         reply_to: replyTo,
                         name,
                         comment,
@@ -1765,7 +2402,11 @@
 
                 document.getElementById('category_select').value = target.category || 'other';
                 filterOshiOptions();
-                document.getElementById('oshi_select').value = target.oshi || 'none';
+                state.selectedOshis = getPostOshiKeys(target);
+                state.selectedTags = getPostTags(target);
+                renderSelectedOshiChips();
+                renderPresetTagChips();
+
                 document.getElementById('name_input').value = target.name || '';
                 document.getElementById('reply_to_input').value = target.reply_to || '';
                 document.getElementById('comment_input').value = target.comment || '';
@@ -1797,24 +2438,153 @@
             }
         }
 
-        async function sendLike(id) {
+        // ============================================================
+        // 管理者ピン留め切替
+        // ============================================================
+        async function handlePinSubmit(e) {
+            e.preventDefault();
+            const pinId = parseInt(document.getElementById('pin_id_input').value, 10);
+            const pinPass = document.getElementById('pin_pass_input').value;
+            const target = postsCache.find(p => Number(p.id) === pinId);
+
+            if (!target) {
+                showMessage('指定された投稿番号が見つかりません。', true);
+                return;
+            }
+
+            const role = await verifyPostOrAdminPassword(pinPass, null);
+            if (role !== 'admin') {
+                showMessage('管理者マスターパスワードが一致しません。', true);
+                return;
+            }
+
+            const nextPinned = !Boolean(target.pinned);
+            try {
+                if (useFirebase) {
+                    await update(ref(db, `bbs_posts/${pinId}`), { pinned: nextPinned });
+                } else {
+                    target.pinned = nextPinned;
+                    saveLocalPosts(postsCache);
+                    render();
+                }
+                document.getElementById('pin_id_input').value = '';
+                document.getElementById('pin_pass_input').value = '';
+                showMessage(nextPinned
+                    ? `📌 投稿 No.${pinId} を最上部にピン留め（固定表示）しました！`
+                    : `📌 投稿 No.${pinId} のピン留めを解除しました。`);
+            } catch (err) {
+                console.error(err);
+                showMessage('ピン留め更新中にエラーが発生しました。', true);
+            }
+        }
+
+        // ============================================================
+        // 「尊い！」ボタン 1人1回制限（取り消しトグル付き）
+        // ============================================================
+        async function toggleLike(id) {
             const numId = Number(id);
-            state.likedIds.add(numId);
+            const alreadyLiked = state.likedIds.has(numId);
+            const delta = alreadyLiked ? -1 : 1;
+
+            if (alreadyLiked) {
+                state.likedIds.delete(numId);
+            } else {
+                state.likedIds.add(numId);
+            }
+            saveIdSet(LIKED_IDS_STORAGE_KEY, state.likedIds);
 
             if (useFirebase) {
                 try {
                     const likesRef = ref(db, `bbs_posts/${numId}/likes`);
-                    await runTransaction(likesRef, (currentLikes) => (Number(currentLikes) || 0) + 1);
+                    await runTransaction(likesRef, (currentLikes) => {
+                        return Math.max(0, (Number(currentLikes) || 0) + delta);
+                    });
                 } catch (err) {
                     console.error(err);
                 }
             } else {
                 const target = postsCache.find(p => Number(p.id) === numId);
                 if (!target) return;
-                target.likes = (Number(target.likes) || 0) + 1;
+                target.likes = Math.max(0, (Number(target.likes) || 0) + delta);
                 saveLocalPosts(postsCache);
                 render();
             }
+        }
+
+        // ============================================================
+        // 通報（非表示リクエスト）
+        // ============================================================
+        async function reportPost(id) {
+            const numId = Number(id);
+            if (state.reportedIds.has(numId)) {
+                showMessage('この投稿はすでに通報済みです。', true);
+                return;
+            }
+            if (!confirm(`投稿 No.${numId} を不適切な投稿として通報しますか？`)) {
+                return;
+            }
+
+            state.reportedIds.add(numId);
+            saveIdSet(REPORTED_IDS_STORAGE_KEY, state.reportedIds);
+
+            if (useFirebase) {
+                try {
+                    const repRef = ref(db, `bbs_posts/${numId}/reports`);
+                    await runTransaction(repRef, (cur) => (Number(cur) || 0) + 1);
+                    showMessage(`🚩 投稿 No.${numId} の通報を受け付けました。ご協力ありがとうございます。`);
+                } catch (err) {
+                    console.error(err);
+                }
+            } else {
+                const target = postsCache.find(p => Number(p.id) === numId);
+                if (target) {
+                    target.reports = (Number(target.reports) || 0) + 1;
+                    saveLocalPosts(postsCache);
+                    render();
+                }
+                showMessage(`🚩 投稿 No.${numId} の通報を受け付けました。`);
+            }
+        }
+
+        // ============================================================
+        // リプライ先プレビューポップアップ
+        // ============================================================
+        function showReplyPreview(targetEl, replyToId) {
+            const tooltip = document.getElementById('reply_preview_tooltip');
+            const targetPost = postsCache.find(p => Number(p.id) === Number(replyToId));
+            if (!targetPost) {
+                tooltip.innerHTML = `<strong>No.${escapeHtml(replyToId)}</strong><div style="color:var(--text-sub);margin-top:4px;">元の投稿は削除されたか見つかりません。</div>`;
+            } else {
+                const snippet = String(targetPost.comment || '').slice(0, 120) + ((targetPost.comment || '').length > 120 ? '…' : '');
+                tooltip.innerHTML = `
+                    <div style="font-weight:bold;color:var(--theme-color);margin-bottom:4px;">
+                        ↩ No.${targetPost.id} ${escapeHtml(targetPost.name)}
+                    </div>
+                    <div style="white-space:pre-wrap;line-height:1.4;">${escapeHtml(snippet)}</div>
+                `;
+            }
+
+            const rect = targetEl.getBoundingClientRect();
+            tooltip.style.display = 'block';
+            const top = Math.min(window.innerHeight - tooltip.offsetHeight - 12, rect.bottom + 6);
+            const left = Math.min(window.innerWidth - tooltip.offsetWidth - 12, Math.max(12, rect.left));
+            tooltip.style.top = `${Math.max(12, top)}px`;
+            tooltip.style.left = `${left}px`;
+        }
+
+        function hideReplyPreview() {
+            const tooltip = document.getElementById('reply_preview_tooltip');
+            if (tooltip) tooltip.style.display = 'none';
+        }
+
+        function toggleReplyThread(postId) {
+            const numId = Number(postId);
+            if (state.expandedReplyIds.has(numId)) {
+                state.expandedReplyIds.delete(numId);
+            } else {
+                state.expandedReplyIds.add(numId);
+            }
+            render();
         }
 
         function selectCategory(cat) {
@@ -1831,16 +2601,27 @@
             e.preventDefault();
             state.q = document.getElementById('search_q_input').value.trim();
             state.oshi = document.getElementById('search_oshi_select').value;
+            state.tag = document.getElementById('search_tag_select').value;
             state.page = 1;
+            render();
+        }
+
+        function filterByTagPill(tag) {
+            state.tag = tag;
+            state.page = 1;
+            document.getElementById('search_tag_select').value = tag;
+            document.getElementById('list-top').scrollIntoView({ behavior: 'smooth' });
             render();
         }
 
         function clearSearch() {
             state.q = '';
             state.oshi = 'all';
+            state.tag = 'all';
             state.page = 1;
             document.getElementById('search_q_input').value = '';
             document.getElementById('search_oshi_select').value = 'all';
+            document.getElementById('search_tag_select').value = 'all';
             render();
         }
 
@@ -1870,6 +2651,7 @@
                 state.cat = 'all';
                 state.q = '';
                 state.oshi = 'all';
+                state.tag = 'all';
                 state.onlyImage = false;
                 state.page = 1;
                 render();
@@ -1879,26 +2661,93 @@
             }
         }
 
+        function markAllAsRead() {
+            const maxId = postsCache.reduce((m, p) => Math.max(m, Number(p.id) || 0), 0);
+            initialLastSeenId = maxId;
+            saveLastSeenId(maxId);
+            render();
+        }
+
         function buildPostBodyHtml(row) {
             const isSpoiler = Boolean(row.is_spoiler);
+            const isReported = (Number(row.reports) || 0) >= REPORT_HIDE_THRESHOLD;
             const spoilerTitle = row.spoiler_label ? escapeHtml(row.spoiler_label) : 'ネタバレ注意！内容を表示する';
+            const tagsHtml = buildPostTagsHtml(row);
             const commentHtml = `<div class="post-comment">${formatComment(row.comment, state.hideSpoiler)}</div>`;
             const imageHtml = row.image
                 ? `<div class="post-image-wrap"><img src="${escapeHtml(row.image)}" alt="添付画像" data-zoom-img="1"></div>`
                 : '';
 
-            if (isSpoiler) {
-                return `<details class="spoiler-box"><summary>⚠️ ${spoilerTitle}</summary>${commentHtml}${imageHtml}</details>`;
+            const inner = tagsHtml + commentHtml + imageHtml;
+
+            if (isReported) {
+                return `<details class="reported-box"><summary>🚩 通報が一定数集まったため自動折りたたみ中です（クリックして内容を確認）</summary><div style="margin-top:8px;">${inner}</div></details>`;
             }
-            return commentHtml + imageHtml;
+            if (isSpoiler) {
+                return `<details class="spoiler-box"><summary>⚠️ ${spoilerTitle}</summary>${inner}</details>`;
+            }
+            return inner;
         }
 
         function render() {
             const posts = postsCache;
 
+            // 返信マップ作成（親投稿ID -> 子リプライ一覧）
+            const repliesMap = new Map();
+            for (const p of posts) {
+                if (p.reply_to != null && p.reply_to !== '') {
+                    const parentId = Number(p.reply_to);
+                    if (!repliesMap.has(parentId)) repliesMap.set(parentId, []);
+                    repliesMap.get(parentId).push(p);
+                }
+            }
+            for (const list of repliesMap.values()) {
+                list.sort((a, b) => Number(a.id) - Number(b.id));
+            }
+
+            // 未読・新着バナー更新
+            const unreadPosts = posts.filter(p => Number(p.id) > initialLastSeenId);
+            const unreadBanner = document.getElementById('unread_banner');
+            if (unreadPosts.length > 0) {
+                document.getElementById('unread_banner_text').textContent =
+                    `✨ 前回のアクセス以降に ${unreadPosts.length} 件の新しい投稿があります！`;
+                unreadBanner.style.display = 'flex';
+            } else {
+                unreadBanner.style.display = 'none';
+            }
+
+            // 0. 管理者ピン留め（固定表示）
+            const pinnedPosts = posts
+                .filter(p => Boolean(p.pinned))
+                .sort((a, b) => Number(b.id) - Number(a.id));
+            const pinnedSection = document.getElementById('pinned_section');
+            const pinnedList = document.getElementById('pinned_list');
+            if (pinnedPosts.length > 0) {
+                pinnedList.innerHTML = pinnedPosts.map(row => {
+                    const catName = CATEGORIES[row.category] || 'その他';
+                    const oshiBadges = buildOshiBadgesHtml(row);
+                    return `
+                        <div class="pickup-card" style="border-color:#91caff;">
+                            <div class="post-header">
+                                <span class="pinned-badge">📌 固定表示</span>
+                                <strong>No.${row.id}</strong>
+                                <span class="badge">${escapeHtml(catName)}</span>
+                                <strong>${escapeHtml(row.name)}</strong>
+                                ${oshiBadges}
+                                <span class="jump-link" style="color:#1890ff;" data-jump-id="${row.id}">元の投稿へ移動 ↓</span>
+                            </div>
+                            ${buildPostBodyHtml(row)}
+                        </div>
+                    `;
+                }).join('');
+                pinnedSection.style.display = 'block';
+            } else {
+                pinnedSection.style.display = 'none';
+            }
+
             // 1. 人気TOP3
             const topCandidates = posts
-                .filter(p => (Number(p.likes) || 0) > 0 && (!state.hideSpoiler || !p.is_spoiler))
+                .filter(p => (Number(p.likes) || 0) > 0 && (!state.hideSpoiler || !p.is_spoiler) && (Number(p.reports) || 0) < REPORT_HIDE_THRESHOLD)
                 .sort((a, b) => (Number(b.likes) - Number(a.likes)) || (Number(b.id) - Number(a.id)))
                 .slice(0, 3);
 
@@ -1908,10 +2757,7 @@
                 const medals = ['🥇 1位', '🥈 2位', '🥉 3位'];
                 pickupList.innerHTML = topCandidates.map((row, idx) => {
                     const catName = CATEGORIES[row.category] || 'その他';
-                    const oshiInfo = (row.oshi && row.oshi !== 'none' && MEMBERS[row.oshi]) ? MEMBERS[row.oshi] : null;
-                    const oshiBadge = oshiInfo
-                        ? `<span class="oshi-badge" style="background-color:${oshiInfo.bg};color:${oshiInfo.color};">♥ ${escapeHtml(oshiInfo.name)}推し</span>`
-                        : '';
+                    const oshiBadges = buildOshiBadgesHtml(row);
                     const likedClass = state.likedIds.has(Number(row.id)) ? 'liked' : '';
                     return `
                         <div class="pickup-card">
@@ -1920,14 +2766,16 @@
                                 <strong>No.${row.id}</strong>
                                 <span class="badge">${escapeHtml(catName)}</span>
                                 <strong>${escapeHtml(row.name)}</strong>
-                                ${oshiBadge}
+                                ${oshiBadges}
                                 <span class="jump-link" data-jump-id="${row.id}">元の投稿へ移動 ↓</span>
                             </div>
                             ${buildPostBodyHtml(row)}
                             <div class="post-footer">
-                                <button type="button" class="like-btn ${likedClass}" data-like-id="${row.id}">
-                                    🙏 尊い！ <span>${Number(row.likes) || 0}</span>
-                                </button>
+                                <div class="post-footer-right">
+                                    <button type="button" class="like-btn ${likedClass}" data-like-id="${row.id}">
+                                        🙏 尊い！ <span>${Number(row.likes) || 0}</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -1948,11 +2796,14 @@
             const qLower = state.q.toLowerCase();
             const baseFiltered = posts.filter(p => {
                 if (state.cat !== 'all' && p.category !== state.cat) return false;
-                if (state.oshi !== 'all' && (p.oshi || 'none') !== state.oshi) return false;
+                const postOshis = getPostOshiKeys(p);
+                if (state.oshi !== 'all' && !postOshis.includes(state.oshi)) return false;
+                const postTags = getPostTags(p);
+                if (state.tag !== 'all' && !postTags.includes(state.tag)) return false;
                 if (state.onlyImage && !p.image) return false;
                 if (qLower !== '') {
-                    const oshiName = (p.oshi && p.oshi !== 'none' && MEMBERS[p.oshi]) ? MEMBERS[p.oshi].name : '';
-                    const hay = `${p.name || ''}\n${p.comment || ''}\n${p.spoiler_label || ''}\n${oshiName}`.toLowerCase();
+                    const oshiNames = postOshis.map(k => MEMBERS[k]?.name || '').join(' ');
+                    const hay = `${p.name || ''}\n${p.comment || ''}\n${p.spoiler_label || ''}\n${oshiNames}\n${postTags.join(' ')}`.toLowerCase();
                     if (!hay.includes(qLower)) return false;
                 }
                 return true;
@@ -1989,7 +2840,7 @@
             }
 
             document.getElementById('clear_search_btn').style.display =
-                (state.q !== '' || state.oshi !== 'all') ? 'inline-block' : 'none';
+                (state.q !== '' || state.oshi !== 'all' || state.tag !== 'all') ? 'inline-block' : 'none';
 
             // 4. ページネーション計算
             const totalFiltered = filtered.length;
@@ -2004,8 +2855,9 @@
 
             const statusParts = [];
             if (state.onlyImage) statusParts.push('【📷画像付きのみ】');
+            if (state.tag !== 'all') statusParts.push(`【#${escapeHtml(state.tag)}】`);
             if (state.q !== '') statusParts.push(`「${escapeHtml(state.q)}」`);
-            if (state.oshi !== 'all' && MEMBERS[state.oshi]) statusParts.push(`【${escapeHtml(MEMBERS[state.oshi].name)}推し】`);
+            if (state.oshi !== 'all' && MEMBERS[state.oshi]) statusParts.push(`【${escapeHtml(getOshiBadgeText(MEMBERS[state.oshi]))}】`);
             document.getElementById('search_status_info').innerHTML = statusParts.length > 0
                 ? '絞り込み条件：' + statusParts.join(' ')
                 : '';
@@ -2016,34 +2868,72 @@
                 container.innerHTML = '<p>条件に一致する投稿はまだありません。</p>';
             } else {
                 container.innerHTML = paged.map(row => {
+                    const numId = Number(row.id);
                     const catName = CATEGORIES[row.category] || 'その他';
-                    const oshiInfo = (row.oshi && row.oshi !== 'none' && MEMBERS[row.oshi]) ? MEMBERS[row.oshi] : null;
-                    const borderStyle = oshiInfo ? `border-left-color:${oshiInfo.bg};` : '';
-                    const oshiBadge = oshiInfo
-                        ? `<span class="oshi-badge" style="background-color:${oshiInfo.bg};color:${oshiInfo.color};">♥ ${escapeHtml(oshiInfo.name)}推し</span>`
-                        : '';
+                    const borderStyle = buildPostBorderStyle(row);
+                    const oshiBadges = buildOshiBadgesHtml(row);
+                    const isNew = numId > initialLastSeenId;
+                    const newBadgeHtml = isNew ? '<span class="new-badge">NEW</span>' : '';
+                    const pinBadgeHtml = row.pinned ? '<span class="pinned-badge">📌 固定</span>' : '';
+
                     const replyBadge = row.reply_to
-                        ? `<div><a href="#post-${row.reply_to}" class="reply-badge" data-jump-id="${row.reply_to}">&gt;&gt; No.${row.reply_to} へのリプライ</a></div>`
+                        ? `<div><a href="#post-${row.reply_to}" class="reply-badge" data-jump-id="${row.reply_to}" data-preview-reply-id="${row.reply_to}">&gt;&gt; No.${row.reply_to} へのリプライ</a></div>`
                         : '';
-                    const likedClass = state.likedIds.has(Number(row.id)) ? 'liked' : '';
+
+                    const childReplies = repliesMap.get(numId) || [];
+                    const isThreadOpen = state.expandedReplyIds.has(numId);
+                    const repliesBtnHtml = childReplies.length > 0
+                        ? `<button type="button" class="replies-toggle-btn" data-toggle-thread-id="${numId}">💬 返信 ${childReplies.length}件を${isThreadOpen ? '閉じる ▲' : '表示 ▼'}</button>`
+                        : '';
+
+                    const repliesThreadHtml = (childReplies.length > 0 && isThreadOpen)
+                        ? `<div class="replies-thread-box" style="display:block;">
+                            ${childReplies.map(rep => `
+                                <div class="reply-tree-item">
+                                    <div style="font-size:0.85em;color:var(--text-sub);margin-bottom:3px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+                                        <strong>No.${rep.id}</strong>
+                                        <strong>${escapeHtml(rep.name)}</strong>
+                                        ${buildOshiBadgesHtml(rep)}
+                                        <span>(${escapeHtml(rep.date || '')})</span>
+                                        <span class="jump-link" data-jump-id="${rep.id}">投稿へ移動</span>
+                                    </div>
+                                    <div style="white-space:pre-wrap;">${formatComment(rep.comment, state.hideSpoiler)}</div>
+                                </div>
+                            `).join('')}
+                        </div>`
+                        : '';
+
+                    const likedClass = state.likedIds.has(numId) ? 'liked' : '';
+                    const reportedClass = state.reportedIds.has(numId) ? 'reported' : '';
 
                     return `
                         <div class="post-card" id="post-${row.id}" style="${borderStyle}">
                             <div class="post-header">
+                                ${pinBadgeHtml}
+                                ${newBadgeHtml}
                                 <strong>No.${row.id}</strong>
                                 <span class="badge">${escapeHtml(catName)}</span>
                                 <strong>${escapeHtml(row.name)}</strong>
-                                ${oshiBadge}
+                                ${oshiBadges}
                                 <span>(${escapeHtml(row.date || '')})</span>
                                 <span class="reply-link" data-reply-id="${row.id}">↩ この投稿にリプする</span>
                             </div>
                             ${replyBadge}
                             ${buildPostBodyHtml(row)}
                             <div class="post-footer">
-                                <button type="button" class="like-btn ${likedClass}" data-like-id="${row.id}">
-                                    🙏 尊い！ <span>${Number(row.likes) || 0}</span>
-                                </button>
+                                <div class="post-footer-left">
+                                    ${repliesBtnHtml}
+                                </div>
+                                <div class="post-footer-right">
+                                    <button type="button" class="report-btn ${reportedClass}" data-report-id="${row.id}" title="不適切な投稿を通報">
+                                        🚩 ${state.reportedIds.has(numId) ? '通報済' : '通報'}
+                                    </button>
+                                    <button type="button" class="like-btn ${likedClass}" data-like-id="${row.id}">
+                                        🙏 尊い！ <span>${Number(row.likes) || 0}</span>
+                                    </button>
+                                </div>
                             </div>
+                            ${repliesThreadHtml}
                         </div>
                     `;
                 }).join('');
@@ -2130,13 +3020,18 @@
             reader.readAsText(file);
         }
 
-        // イベントリスナー登録（type="module" スコープ対応）
         window.addEventListener('DOMContentLoaded', async () => {
             await ensureAdminHash();
             initSelects();
             filterOshiOptions();
-            applySavedUserProfile();
+            restoreDraftOrProfile();
             startCooldownWatcher();
+
+            let savedDark = false;
+            try {
+                savedDark = localStorage.getItem(DARK_MODE_STORAGE_KEY) === '1';
+            } catch (e) {}
+            applyDarkMode(savedDark);
 
             let savedTheme = 'default';
             try {
@@ -2148,19 +3043,35 @@
             }
             applyOshiTheme(savedTheme);
 
+            document.getElementById('dark_mode_btn').addEventListener('click', toggleDarkMode);
             document.getElementById('theme_oshi_select').addEventListener('change', (e) => changeThemeOshi(e.target.value));
             document.getElementById('toggle_post_form_btn').addEventListener('click', togglePostForm);
             document.getElementById('toggle_manage_form_btn').addEventListener('click', toggleManageForm);
-            document.getElementById('category_select').addEventListener('change', filterOshiOptions);
+            document.getElementById('category_select').addEventListener('change', () => {
+                filterOshiOptions();
+                saveDraft();
+            });
+            document.getElementById('oshi_select').addEventListener('change', handleOshiSelectChange);
+            document.getElementById('clear_oshi_btn').addEventListener('click', clearSelectedOshis);
             document.getElementById('image_input').addEventListener('change', (e) => previewImage(e.target));
             document.getElementById('clear_image_btn').addEventListener('click', clearSelectedImage);
-            document.getElementById('is_spoiler_cb').addEventListener('change', toggleSpoilerLabelInput);
+            document.getElementById('is_spoiler_cb').addEventListener('change', () => {
+                toggleSpoilerLabelInput();
+                saveDraft();
+            });
             document.getElementById('wrap_spoiler_btn').addEventListener('click', wrapWithSpoiler);
             document.getElementById('cancel_edit_btn').addEventListener('click', cancelEdit);
+            document.getElementById('clear_draft_btn').addEventListener('click', () => clearDraft(true));
+
+            // 下書きリアルタイム自動保存リスナー
+            ['name_input', 'reply_to_input', 'comment_input', 'spoiler_label_input'].forEach(elId => {
+                document.getElementById(elId).addEventListener('input', saveDraft);
+            });
 
             document.getElementById('post_form').addEventListener('submit', handlePostSubmit);
             document.getElementById('delete_form').addEventListener('submit', handleDeleteSubmit);
             document.getElementById('edit_load_form').addEventListener('submit', handleEditLoad);
+            document.getElementById('pin_form').addEventListener('submit', handlePinSubmit);
             document.getElementById('search_form').addEventListener('submit', handleSearchSubmit);
             document.getElementById('clear_search_btn').addEventListener('click', clearSearch);
             document.getElementById('spoiler_toggle_btn').addEventListener('click', toggleHideSpoiler);
@@ -2168,11 +3079,57 @@
             document.getElementById('export_json_btn').addEventListener('click', exportJson);
             document.getElementById('import_json_input').addEventListener('change', (e) => importJson(e.target));
 
+            document.getElementById('jump_unread_btn').addEventListener('click', () => {
+                const oldestUnread = postsCache
+                    .filter(p => Number(p.id) > initialLastSeenId)
+                    .sort((a, b) => Number(a.id) - Number(b.id))[0];
+                if (oldestUnread) jumpToPost(oldestUnread.id);
+            });
+            document.getElementById('mark_read_btn').addEventListener('click', markAllAsRead);
+
+            // リプライ先プレビュー（マウスホバー）
+            document.body.addEventListener('mouseover', (e) => {
+                const previewTrigger = e.target.closest('[data-preview-reply-id]');
+                if (previewTrigger) {
+                    showReplyPreview(previewTrigger, previewTrigger.getAttribute('data-preview-reply-id'));
+                }
+            });
+            document.body.addEventListener('mouseout', (e) => {
+                if (e.target.closest('[data-preview-reply-id]')) {
+                    hideReplyPreview();
+                }
+            });
+
             // 動的生成要素のイベント委譲
             document.body.addEventListener('click', (e) => {
+                const toggleTagBtn = e.target.closest('[data-toggle-tag]');
+                if (toggleTagBtn) {
+                    togglePresetTag(toggleTagBtn.getAttribute('data-toggle-tag'));
+                    return;
+                }
+                const filterTagBtn = e.target.closest('[data-filter-tag]');
+                if (filterTagBtn) {
+                    filterByTagPill(filterTagBtn.getAttribute('data-filter-tag'));
+                    return;
+                }
+                const removeOshiBtn = e.target.closest('[data-remove-oshi]');
+                if (removeOshiBtn) {
+                    removeSelectedOshi(removeOshiBtn.getAttribute('data-remove-oshi'));
+                    return;
+                }
                 const likeBtn = e.target.closest('[data-like-id]');
                 if (likeBtn) {
-                    sendLike(likeBtn.getAttribute('data-like-id'));
+                    toggleLike(likeBtn.getAttribute('data-like-id'));
+                    return;
+                }
+                const reportBtn = e.target.closest('[data-report-id]');
+                if (reportBtn) {
+                    reportPost(reportBtn.getAttribute('data-report-id'));
+                    return;
+                }
+                const toggleThreadBtn = e.target.closest('[data-toggle-thread-id]');
+                if (toggleThreadBtn) {
+                    toggleReplyThread(toggleThreadBtn.getAttribute('data-toggle-thread-id'));
                     return;
                 }
                 const replyBtn = e.target.closest('[data-reply-id]');
@@ -2183,6 +3140,7 @@
                 const jumpBtn = e.target.closest('[data-jump-id]');
                 if (jumpBtn) {
                     e.preventDefault();
+                    hideReplyPreview();
                     jumpToPost(jumpBtn.getAttribute('data-jump-id'));
                     return;
                 }
