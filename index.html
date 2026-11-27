@@ -784,9 +784,36 @@
         }
         .post-footer-right {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             gap: 8px;
             margin-left: auto;
+        }
+        .admin-card-actions {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+        }
+        .admin-card-btn {
+            background: var(--soft-box-bg);
+            border: 1px solid #91caff;
+            color: #0958d9;
+            border-radius: 14px;
+            padding: 3px 9px;
+            font-size: 0.78em;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .admin-card-btn:hover {
+            background: #e6f4ff;
+        }
+        .admin-card-btn.danger {
+            border-color: #ffa39e;
+            color: #cf1322;
+        }
+        .admin-card-btn.danger:hover {
+            background: #fff2f0;
         }
         .replies-toggle-btn {
             background: var(--soft-box-bg);
@@ -979,10 +1006,10 @@
         </div>
 
         <form id="post_form">
-            <input type="hidden" id="edit_target_id" value="">
+            <input type="hidden" id="edit_target_id" value="" data-original-date="">
 
             <div class="form-row">
-                <label style="font-size: 0.85em; font-weight: bold;">シリーズ・カテゴリ：</label>
+                <label style="font-size: 0.85em; font-weight: bold;">シリーズ・カテゴリ（変更すると選択中の推しバッジはリセットされます）：</label>
                 <select id="category_select"></select>
             </div>
 
@@ -1157,7 +1184,7 @@
                 <div class="form-row"><input type="password" id="pin_pass_input" placeholder="管理者マスターパスワード" required></div>
                 <button type="submit" class="btn btn-sub">固定切替</button>
             </form>
-            <div class="admin-hint">※ 管理者モードON時のみ利用可能。最上部に固定表示（再実行で解除）。</div>
+            <div class="admin-hint">※ 管理者モードON時のみ利用可能。各投稿カードのボタンからも切替可。</div>
         </div>
     </div>
 
@@ -1184,7 +1211,6 @@
             onValue,
             set,
             update,
-            remove,
             runTransaction
         } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-database.js";
 
@@ -1270,6 +1296,7 @@
             niji: '虹ヶ咲学園スクールアイドル同好会',
             liella: 'Liella!（スーパースター!!）',
             hasu: '蓮ノ空女学院スクールアイドルクラブ',
+            musical: 'スクールアイドルミュージカル',
             ikizulive: 'イキヅライブ！ LOVELIVE! BLUEBIRD',
             other: 'その他・シリーズ横断・ライブ感想'
         };
@@ -1280,9 +1307,11 @@
             group_niji: { name: '虹ヶ咲 グループカラー', shortName: '虹ヶ咲推し', bg: '#f5c400', color: '#333333' },
             group_liella: { name: 'Liella! グループカラー', shortName: 'Liella!推し', bg: '#9b51e0', color: '#ffffff' },
             group_hasu: { name: '蓮ノ空 グループカラー', shortName: '蓮ノ空推し', bg: '#e84a7f', color: '#ffffff' },
+            group_musical: { name: 'ミュージカル グループカラー', shortName: 'ミュージカル推し', bg: '#e91e63', color: '#ffffff' },
             group_ikizulive: { name: 'イキヅライブ！ グループカラー', shortName: 'イキヅライブ推し', bg: '#ff7a00', color: '#ffffff' }
         };
 
+        // メンバーカラー定義（「メンバー紹介（総合）」準拠）
         const MEMBERS = {
             none: { name: '選択なし（シリーズ全体箱推し・DD）', bg: '#e0e0e0', color: '#333333', group: 'all' },
             hako_muse: { name: "μ's箱推し", badgeLabel: "μ's箱推し", bg: '#e4007f', color: '#ffffff', group: 'muse', isGroup: true },
@@ -1290,28 +1319,29 @@
             hako_niji: { name: '虹ヶ咲箱推し', badgeLabel: '虹ヶ咲箱推し', bg: '#f5c400', color: '#333333', group: 'niji', isGroup: true },
             hako_liella: { name: 'Liella!箱推し', badgeLabel: 'Liella!箱推し', bg: '#9b51e0', color: '#ffffff', group: 'liella', isGroup: true },
             hako_hasu: { name: '蓮ノ空箱推し', badgeLabel: '蓮ノ空箱推し', bg: '#e84a7f', color: '#ffffff', group: 'hasu', isGroup: true },
+            hako_musical: { name: 'ミュージカル箱推し', badgeLabel: 'ミュージカル箱推し', bg: '#e91e63', color: '#ffffff', group: 'musical', isGroup: true },
             hako_ikizulive: { name: 'イキヅライブ箱推し', badgeLabel: 'イキヅライブ箱推し', bg: '#ff7a00', color: '#ffffff', group: 'ikizulive', isGroup: true },
-            // μ's
-            honoka: { name: '高坂 穂乃果', bg: '#ffa300', color: '#ffffff', group: 'muse' },
-            eli: { name: '絢瀬 絵里', bg: '#36b3dd', color: '#ffffff', group: 'muse' },
-            kotori: { name: '南 ことり', bg: '#8c9395', color: '#ffffff', group: 'muse' },
+            // μ's（メンバー紹介（総合））
+            honoka: { name: '高坂 穂乃果', bg: '#f38500', color: '#ffffff', group: 'muse' },
+            eli: { name: '絢瀬 絵里', bg: '#7aeeff', color: '#333333', group: 'muse' },
+            kotori: { name: '南 ことり', bg: '#cebfbf', color: '#333333', group: 'muse' },
             umi: { name: '園田 海未', bg: '#1769ff', color: '#ffffff', group: 'muse' },
-            rin: { name: '星空 凛', bg: '#f1c40f', color: '#333333', group: 'muse' },
-            maki: { name: '西木野 真姫', bg: '#ff3b30', color: '#ffffff', group: 'muse' },
-            nozomi: { name: '東條 希', bg: '#8e44ad', color: '#ffffff', group: 'muse' },
-            hanayo: { name: '小泉 花陽', bg: '#2ecc71', color: '#ffffff', group: 'muse' },
-            nico: { name: '矢澤 にこ', bg: '#ff69b4', color: '#ffffff', group: 'muse' },
-            // Aqours
-            chika: { name: '高海 千歌', bg: '#ff7900', color: '#ffffff', group: 'aqours' },
-            riko: { name: '桜内 梨子', bg: '#ff99a8', color: '#333333', group: 'aqours' },
-            kanan: { name: '松浦 果南', bg: '#13e8ae', color: '#333333', group: 'aqours' },
-            dia: { name: '黒澤 ダイヤ', bg: '#f23b4c', color: '#ffffff', group: 'aqours' },
-            you: { name: '渡辺 曜', bg: '#49b9f9', color: '#ffffff', group: 'aqours' },
-            yoshiko: { name: '津島 善子', bg: '#898989', color: '#ffffff', group: 'aqours' },
-            hanamaru: { name: '国木田 花丸', bg: '#e6d617', color: '#333333', group: 'aqours' },
-            mari: { name: '小原 鞠莉', bg: '#a530e0', color: '#ffffff', group: 'aqours' },
-            ruby: { name: '黒澤 ルビィ', bg: '#ff69b4', color: '#ffffff', group: 'aqours' },
-            // 虹ヶ咲
+            rin: { name: '星空 凛', bg: '#fff832', color: '#333333', group: 'muse' },
+            maki: { name: '西木野 真姫', bg: '#ff503e', color: '#ffffff', group: 'muse' },
+            nozomi: { name: '東條 希', bg: '#c455f6', color: '#ffffff', group: 'muse' },
+            hanayo: { name: '小泉 花陽', bg: '#6ae673', color: '#333333', group: 'muse' },
+            nico: { name: '矢澤 にこ', bg: '#ff4f91', color: '#ffffff', group: 'muse' },
+            // Aqours（メンバー紹介（総合））
+            chika: { name: '高海 千歌', bg: '#ff9547', color: '#ffffff', group: 'aqours' },
+            riko: { name: '桜内 梨子', bg: '#ff9eac', color: '#333333', group: 'aqours' },
+            kanan: { name: '松浦 果南', bg: '#27c1b7', color: '#333333', group: 'aqours' },
+            dia: { name: '黒澤 ダイヤ', bg: '#db0839', color: '#ffffff', group: 'aqours' },
+            you: { name: '渡辺 曜', bg: '#66c0ff', color: '#333333', group: 'aqours' },
+            yoshiko: { name: '津島 善子', bg: '#c1cad4', color: '#333333', group: 'aqours' },
+            hanamaru: { name: '国木田 花丸', bg: '#ffd010', color: '#333333', group: 'aqours' },
+            mari: { name: '小原 鞠莉', bg: '#c252c6', color: '#ffffff', group: 'aqours' },
+            ruby: { name: '黒澤 ルビィ', bg: '#ff6fbe', color: '#ffffff', group: 'aqours' },
+            // 虹ヶ咲（メンバー紹介（総合））
             ayumu: { name: '上原 歩夢', bg: '#ed7d95', color: '#ffffff', group: 'niji' },
             kasumi: { name: '中須 かすみ', bg: '#e7d600', color: '#333333', group: 'niji' },
             shizuku: { name: '桜坂 しずく', bg: '#01b7ed', color: '#ffffff', group: 'niji' },
@@ -1319,15 +1349,15 @@
             ai: { name: '宮下 愛', bg: '#ff5800', color: '#ffffff', group: 'niji' },
             kanata: { name: '近江 彼方', bg: '#a664a0', color: '#ffffff', group: 'niji' },
             setsuna: { name: '優木 せつ菜', bg: '#d81c2f', color: '#ffffff', group: 'niji' },
-            emma: { name: 'エマ・ヴェルデ', bg: '#84c36e', color: '#ffffff', group: 'niji' },
+            emma: { name: 'エマ・ヴェルデ', bg: '#84c36e', color: '#333333', group: 'niji' },
             rina: { name: '天王寺 璃奈', bg: '#9ca5b9', color: '#ffffff', group: 'niji' },
             shioriko: { name: '三船 栞子', bg: '#37b484', color: '#ffffff', group: 'niji' },
-            mia: { name: 'ミア・テイラー', bg: '#d6d5ca', color: '#333333', group: 'niji' },
+            mia: { name: 'ミア・テイラー', bg: '#a99e98', color: '#ffffff', group: 'niji' },
             lanzhu: { name: '鐘 嵐珠', bg: '#f8c8c4', color: '#333333', group: 'niji' },
             yu: { name: '高咲 侑', bg: '#1d1d1d', color: '#ffffff', group: 'niji' },
-            // Liella!
+            // Liella!（メンバー紹介（総合））
             kanon: { name: '澁谷 かのん', bg: '#ff7f27', color: '#ffffff', group: 'liella' },
-            keke: { name: '唐 可可', bg: '#a0d8ef', color: '#333333', group: 'liella' },
+            keke: { name: '唐 可可', bg: '#a0fff9', color: '#333333', group: 'liella' },
             chisato: { name: '嵐 千砂都', bg: '#ff6e90', color: '#ffffff', group: 'liella' },
             sumire: { name: '平安名 すみれ', bg: '#74f466', color: '#333333', group: 'liella' },
             ren: { name: '葉月 恋', bg: '#0000a0', color: '#ffffff', group: 'liella' },
@@ -1335,8 +1365,8 @@
             mei: { name: '米女 メイ', bg: '#ff3535', color: '#ffffff', group: 'liella' },
             shiki: { name: '若菜 四季', bg: '#b2ffdd', color: '#333333', group: 'liella' },
             natsumi: { name: '鬼塚 夏美', bg: '#ff51c4', color: '#ffffff', group: 'liella' },
-            wien: { name: 'ウィーン・マルガレーテ', bg: '#e49be4', color: '#333333', group: 'liella' },
-            tomari: { name: '鬼塚 冬毬', bg: '#4cd2e2', color: '#333333', group: 'liella' },
+            wien: { name: 'ウィーン・マルガレーテ', bg: '#e49dfd', color: '#333333', group: 'liella' },
+            tomari: { name: '鬼塚 冬毬', bg: '#76dddf', color: '#333333', group: 'liella' },
             // 蓮ノ空
             kaho: { name: '日野下 花帆', bg: '#f8b500', color: '#ffffff', group: 'hasu' },
             sayaka: { name: '村野 さやか', bg: '#5383c3', color: '#ffffff', group: 'hasu' },
@@ -1347,17 +1377,33 @@
             ginko: { name: '百生 吟子', bg: '#a2d7dd', color: '#333333', group: 'hasu' },
             kosuzu: { name: '徒町 小鈴', bg: '#fad764', color: '#333333', group: 'hasu' },
             hime: { name: '安養寺 姫芽', bg: '#9d8de2', color: '#ffffff', group: 'hasu' },
+            ceras: { name: 'セラス 柳田 リリエンフェルト', bg: '#f56455', color: '#ffffff', group: 'hasu' },
+            izumi: { name: '桂城 泉', bg: '#1ebecd', color: '#ffffff', group: 'hasu' },
+            maika: { name: '錦上 マイカ', bg: '#ff9900', color: '#ffffff', group: 'hasu' },
+            aoi: { name: '令沢 葵', bg: '#eefbc3', color: '#333333', group: 'hasu' },
+            mion: { name: '紫輪 みおん', bg: '#6461bf', color: '#ffffff', group: 'hasu' },
+            // スクールアイドルミュージカル（メンバー紹介（総合））
+            rurika: { name: '椿 ルリカ', bg: '#73b8e2', color: '#333333', group: 'musical' },
+            yuzuha: { name: '皇 ユズハ', bg: '#efefef', color: '#333333', group: 'musical' },
+            yukino: { name: '北条 ユキノ', bg: '#f58220', color: '#ffffff', group: 'musical' },
+            hikaru: { name: '天草 ヒカル', bg: '#3c6854', color: '#ffffff', group: 'musical' },
+            maya: { name: '三笠 マーヤ', bg: '#e48898', color: '#333333', group: 'musical' },
+            anzu: { name: '滝沢 アンズ', bg: '#d81f35', color: '#ffffff', group: 'musical' },
+            misuzu: { name: '若槻 ミスズ', bg: '#004c71', color: '#ffffff', group: 'musical' },
+            toa: { name: '来栖 トア', bg: '#ff8c90', color: '#333333', group: 'musical' },
+            rena: { name: '鈴賀 レナ', bg: '#abc900', color: '#333333', group: 'musical' },
+            sayaka_m: { name: '晴風 サヤカ', bg: '#ffee50', color: '#333333', group: 'musical' },
             // イキヅライブ！
-            polka: { name: '高橋 ポルカ', bg: '#00a0e9', color: '#ffffff', group: 'ikizulive' },
-            mai: { name: '麻布 麻衣', bg: '#2b547e', color: '#ffffff', group: 'ikizulive' },
-            akira: { name: '五桐 玲', bg: '#43a047', color: '#ffffff', group: 'ikizulive' },
-            hanabi: { name: '駒形 花火', bg: '#e53935', color: '#ffffff', group: 'ikizulive' },
-            miracle: { name: '金澤 奇跡', bg: '#fdd835', color: '#333333', group: 'ikizulive' },
-            noriko: { name: '調布 のりこ', bg: '#ab47bc', color: '#ffffff', group: 'ikizulive' },
-            yukuri: { name: '春宮 ゆくり', bg: '#f48fb1', color: '#333333', group: 'ikizulive' },
-            aurora: { name: '此花 輝夜', bg: '#80deea', color: '#333333', group: 'ikizulive' },
-            midori: { name: '山田 真緑', bg: '#81c784', color: '#333333', group: 'ikizulive' },
-            shion: { name: '佐々木 翔音', bg: '#b0bec5', color: '#333333', group: 'ikizulive' }
+            polka: { name: '高橋 ポルカ', bg: '#ffff66', color: '#333333', group: 'ikizulive' },
+            mai: { name: '麻布 麻衣', bg: '#4d93d9', color: '#ffffff', group: 'ikizulive' },
+            akira: { name: '五桐 玲', bg: '#b5e6a2', color: '#333333', group: 'ikizulive' },
+            hanabi: { name: '駒形 花火', bg: '#ff4747', color: '#ffffff', group: 'ikizulive' },
+            miracle: { name: '金澤 奇跡', bg: '#ffb6c1', color: '#333333', group: 'ikizulive' },
+            noriko: { name: '調布 のりこ', bg: '#cc66ff', color: '#ffffff', group: 'ikizulive' },
+            yukuri: { name: '春宮 ゆくり', bg: '#c0e6f5', color: '#333333', group: 'ikizulive' },
+            aurora: { name: '此花 輝夜', bg: '#ff5b9d', color: '#ffffff', group: 'ikizulive' },
+            midori: { name: '山田 真緑', bg: '#3fbf7f', color: '#ffffff', group: 'ikizulive' },
+            shion: { name: '佐々木 翔音', bg: '#f2f2f2', color: '#333333', group: 'ikizulive' }
         };
 
         function loadIdSet(storageKey) {
@@ -1413,9 +1459,41 @@
             expandedReplyIds: new Set()
         };
 
-        // ============================================================
-        // 管理者モード ON/OFF 制御
-        // ============================================================
+        function syncEditingTargetWithPosts() {
+            const editInput = document.getElementById('edit_target_id');
+            if (!editInput || !editInput.value) return;
+
+            const currentId = Number(editInput.value);
+            const originalDate = editInput.dataset.originalDate || '';
+            const formTitleEl = document.getElementById('form_title');
+            const isAdminEdit = formTitleEl && formTitleEl.textContent.includes('管理者編集中');
+
+            let matched = postsCache.find(p => Number(p.id) === currentId);
+            if (!matched || (originalDate && matched.date !== originalDate)) {
+                matched = postsCache.find(p => originalDate && p.date === originalDate);
+            }
+
+            if (!matched) {
+                resetForm();
+                showMessage('⚠️ 編集中の投稿が削除されたため、編集モードを解除しました。', true);
+                return;
+            }
+
+            if (Number(matched.id) !== currentId) {
+                editInput.value = matched.id;
+                if (formTitleEl) {
+                    formTitleEl.textContent = isAdminEdit
+                        ? `🛡️ 投稿 No.${matched.id} を管理者編集中`
+                        : `✏️ 投稿 No.${matched.id} を編集中`;
+                }
+                showMessage(`🔄 他の投稿の削除により番号が繰り上がったため、編集対象を No.${matched.id} に自動追従しました。`);
+            }
+        }
+
+        function isCurrentlyEditingAnyPost() {
+            return Boolean(document.getElementById('edit_target_id')?.value);
+        }
+
         function syncAdminModeUI() {
             const btn = document.getElementById('admin_mode_btn');
             const pinBox = document.getElementById('pin_manage_box');
@@ -1431,12 +1509,12 @@
             }
             if (delHint) {
                 delHint.textContent = isAdminMode
-                    ? '※ 管理者モードON：投稿パスワードまたは管理者マスターパスで削除可。'
+                    ? '※ 管理者モードON：投稿パスワードまたは管理者マスターパスで削除可（カード上からも削除可）。'
                     : '※ 投稿時のパスワードで削除可（管理者マスターパスは管理者モードON時のみ有効）。';
             }
             if (editHint) {
                 editHint.textContent = isAdminMode
-                    ? '※ 管理者モードON：投稿パスワードまたは管理者マスターパスで編集可。'
+                    ? '※ 管理者モードON：投稿パスワードまたは管理者マスターパスで編集可（カード上からも編集可）。'
                     : '※ 投稿時のパスワードで編集可（管理者マスターパスは管理者モードON時のみ有効）。';
             }
         }
@@ -1451,6 +1529,7 @@
                 }
             } catch (e) {}
             syncAdminModeUI();
+            render();
         }
 
         function loadAdminMode() {
@@ -1488,9 +1567,185 @@
                 document.getElementById('admin_login_bar').style.display = 'none';
                 input.value = '';
                 setAdminMode(true);
-                showMessage('🛡️ 管理者モードがONになりました。ピン留めや管理者権限での編集・削除が可能です。');
+                showMessage('🛡️ 管理者モードがONになりました。各投稿カードのピン留め・編集・削除ボタンが有効です。');
             } else {
                 showMessage('管理者マスターパスワードが一致しません。', true);
+            }
+        }
+
+        async function removeAndReindexPosts(deleteId) {
+            const numId = Number(deleteId);
+            const remaining = postsCache
+                .filter(p => Number(p.id) !== numId)
+                .sort((a, b) => Number(a.id) - Number(b.id));
+
+            const idMap = new Map();
+            remaining.forEach((post, index) => {
+                idMap.set(Number(post.id), index + 1);
+            });
+
+            const newPostsMap = {};
+            const reindexedPosts = remaining.map((post, index) => {
+                const newId = index + 1;
+                let nextReplyTo = null;
+                if (post.reply_to != null && post.reply_to !== '') {
+                    const mappedParent = idMap.get(Number(post.reply_to));
+                    nextReplyTo = mappedParent ?? null;
+                }
+                const updatedPost = {
+                    ...post,
+                    id: newId,
+                    reply_to: nextReplyTo
+                };
+                newPostsMap[newId] = updatedPost;
+                return updatedPost;
+            });
+
+            const newMaxId = reindexedPosts.length;
+
+            const remapSet = (oldSet) => {
+                const nextSet = new Set();
+                for (const oldId of oldSet) {
+                    if (idMap.has(Number(oldId))) {
+                        nextSet.add(idMap.get(Number(oldId)));
+                    }
+                }
+                return nextSet;
+            };
+            state.likedIds = remapSet(state.likedIds);
+            state.reportedIds = remapSet(state.reportedIds);
+            state.expandedReplyIds = remapSet(state.expandedReplyIds);
+            saveIdSet(LIKED_IDS_STORAGE_KEY, state.likedIds);
+            saveIdSet(REPORTED_IDS_STORAGE_KEY, state.reportedIds);
+
+            if (initialLastSeenId > newMaxId) {
+                initialLastSeenId = newMaxId;
+                saveLastSeenId(newMaxId);
+            }
+
+            if (useFirebase) {
+                await set(ref(db, 'bbs_posts'), newMaxId > 0 ? newPostsMap : null);
+                await set(ref(db, 'bbs_meta/last_id'), newMaxId);
+            } else {
+                postsCache = reindexedPosts;
+                saveLocalPosts(postsCache);
+                handlePostsLoaded();
+            }
+        }
+
+        async function togglePinById(pinId) {
+            const numId = Number(pinId);
+            if (!isAdminMode) {
+                showMessage('ピン留め操作には「管理者モード」をONにする必要があります。', true);
+                return;
+            }
+            const target = postsCache.find(p => Number(p.id) === numId);
+            if (!target) {
+                showMessage('指定された投稿番号が見つかりません。', true);
+                return;
+            }
+
+            const nextPinned = !Boolean(target.pinned);
+            try {
+                if (useFirebase) {
+                    await update(ref(db, `bbs_posts/${numId}`), { pinned: nextPinned });
+                } else {
+                    target.pinned = nextPinned;
+                    saveLocalPosts(postsCache);
+                    render();
+                }
+                showMessage(nextPinned
+                    ? `📌 投稿 No.${numId} を最上部にピン留め（固定表示）しました！`
+                    : `📌 投稿 No.${numId} のピン留めを解除しました。`);
+            } catch (err) {
+                console.error(err);
+                showMessage('ピン留め更新中にエラーが発生しました。', true);
+            }
+        }
+
+        function populateEditForm(target, isAdminEdit) {
+            const editInput = document.getElementById('edit_target_id');
+            editInput.value = target.id;
+            editInput.dataset.originalDate = target.date || '';
+
+            document.getElementById('form_title').textContent = isAdminEdit
+                ? `🛡️ 投稿 No.${target.id} を管理者編集中`
+                : `✏️ 投稿 No.${target.id} を編集中`;
+            document.getElementById('cancel_edit_btn').style.display = 'inline-block';
+
+            document.getElementById('category_select').value = target.category || 'other';
+            filterOshiOptions();
+            state.selectedOshis = getPostOshiKeys(target);
+            state.selectedTags = getPostTags(target);
+            renderSelectedOshiChips();
+            renderPresetTagChips();
+
+            document.getElementById('name_input').value = target.name || '';
+            document.getElementById('reply_to_input').value = target.reply_to || '';
+            document.getElementById('comment_input').value = target.comment || '';
+            document.getElementById('is_spoiler_cb').checked = Boolean(target.is_spoiler);
+            document.getElementById('spoiler_label_input').value = target.spoiler_label || '';
+            toggleSpoilerLabelInput();
+
+            document.getElementById('pass_input').value = '';
+            document.getElementById('pass_input').placeholder = '新しいパスワード（変更しない場合は空欄）';
+            document.getElementById('remove_image_cb').checked = false;
+            clearSelectedImage();
+
+            if (target.image) {
+                document.getElementById('existing_image_img').src = target.image;
+                document.getElementById('existing_image_wrap').style.display = 'block';
+            } else {
+                document.getElementById('existing_image_wrap').style.display = 'none';
+            }
+
+            updateCooldownUI();
+            setPostFormOpen(true);
+            document.getElementById('post_form_wrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            const prefix = isAdminEdit ? '🛡️ 【管理者権限】' : '';
+            showMessage(`${prefix}投稿番号 ${target.id} の編集モードです。上のフォームから内容を書き換えて送信してください。`);
+        }
+
+        function quickEditPostById(editId) {
+            const numId = Number(editId);
+            if (!isAdminMode) {
+                showMessage('管理者ワンクリック編集には「管理者モード」をONにする必要があります。', true);
+                return;
+            }
+            const target = postsCache.find(p => Number(p.id) === numId);
+            if (!target) {
+                showMessage('指定された投稿番号が見つかりません。', true);
+                return;
+            }
+            populateEditForm(target, true);
+        }
+
+        async function deletePostById(deleteId) {
+            if (isCurrentlyEditingAnyPost()) {
+                showMessage('⚠️ 投稿の編集中は削除操作を行えません。先に編集を完了またはキャンセルしてください。', true);
+                return;
+            }
+            const numId = Number(deleteId);
+            if (!isAdminMode) {
+                showMessage('管理者ワンクリック削除には「管理者モード」をONにする必要があります。', true);
+                return;
+            }
+            const idx = postsCache.findIndex(p => Number(p.id) === numId);
+            if (idx === -1) {
+                showMessage('指定された投稿番号が見つかりません。', true);
+                return;
+            }
+            if (!confirm(`🛡️ 【管理者権限】投稿 No.${numId} を完全に削除し、後続の番号を前に詰めますか？`)) {
+                return;
+            }
+
+            try {
+                await removeAndReindexPosts(numId);
+                showMessage(`🛡️ 【管理者権限】投稿番号 ${numId} を削除し、番号を前に詰めました。`);
+            } catch (err) {
+                console.error(err);
+                showMessage('削除中にエラーが発生しました。', true);
             }
         }
 
@@ -1633,7 +1888,7 @@
         }
 
         function saveDraft() {
-            if (document.getElementById('edit_target_id').value) return;
+            if (isCurrentlyEditingAnyPost()) return;
             try {
                 const draft = {
                     category: document.getElementById('category_select').value,
@@ -1771,7 +2026,7 @@
         function updateCooldownUI() {
             const submitBtn = document.getElementById('submit_btn');
             const hintBox = document.getElementById('cooldown_hint');
-            const isEditing = Boolean(document.getElementById('edit_target_id').value);
+            const isEditing = isCurrentlyEditingAnyPost();
 
             if (isEditing) {
                 hintBox.style.display = 'none';
@@ -1820,6 +2075,7 @@
                     saveLastSeenId(maxId);
                 }
             }
+            syncEditingTargetWithPosts();
             render();
         }
 
@@ -1904,7 +2160,7 @@
             const wrapper = document.getElementById('post_form_wrapper');
             const btn = document.getElementById('toggle_post_form_btn');
             const icon = document.getElementById('toggle_post_form_icon');
-            const isEditing = Boolean(document.getElementById('edit_target_id').value);
+            const isEditing = isCurrentlyEditingAnyPost();
 
             if (isOpen) {
                 wrapper.style.display = 'block';
@@ -2085,7 +2341,6 @@
             const inputHash = await hashPassword(inputPlain);
             const masterHash = await ensureAdminHash();
 
-            // 管理者マスターパスワードは「管理者モードON」のときのみ有効
             if (isAdminMode && masterHash && inputHash === masterHash) {
                 return 'admin';
             }
@@ -2271,7 +2526,9 @@
         }
 
         function resetForm() {
-            document.getElementById('edit_target_id').value = '';
+            const editInput = document.getElementById('edit_target_id');
+            editInput.value = '';
+            editInput.dataset.originalDate = '';
             document.getElementById('form_title').textContent = '📝 新規投稿 / リプライ';
             document.getElementById('cancel_edit_btn').style.display = 'none';
             document.getElementById('name_input').value = '';
@@ -2306,7 +2563,8 @@
         async function handlePostSubmit(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('submit_btn');
-            const editTargetId = document.getElementById('edit_target_id').value;
+            const editInput = document.getElementById('edit_target_id');
+            const editTargetId = editInput.value;
 
             if (!editTargetId) {
                 const remain = getRemainingCooldownSec();
@@ -2385,12 +2643,18 @@
                     resetForm();
                     showMessage(`新規投稿（No.${newId}）を送信しました！`);
                 } else {
-                    const targetId = parseInt(editTargetId, 10);
-                    const target = postsCache.find(p => Number(p.id) === targetId);
+                    const rawTargetId = parseInt(editTargetId, 10);
+                    const originalDate = editInput.dataset.originalDate || '';
+                    let target = postsCache.find(p => Number(p.id) === rawTargetId);
+                    if (!target || (originalDate && target.date !== originalDate)) {
+                        target = postsCache.find(p => originalDate && p.date === originalDate);
+                    }
                     if (!target) {
-                        showMessage('編集対象の投稿が見つかりません。', true);
+                        showMessage('編集対象の投稿はすでに削除されたため、更新を中止しました。', true);
+                        resetForm();
                         return;
                     }
+                    const actualTargetId = Number(target.id);
 
                     let nextImage = target.image || null;
                     if (state.selectedImageDataUrl) {
@@ -2416,7 +2680,7 @@
                     };
 
                     if (useFirebase) {
-                        await update(ref(db, `bbs_posts/${targetId}`), updates);
+                        await update(ref(db, `bbs_posts/${actualTargetId}`), updates);
                     } else {
                         Object.assign(target, updates);
                         if (saveLocalPosts(postsCache)) {
@@ -2425,7 +2689,7 @@
                     }
 
                     resetForm();
-                    showMessage(`投稿番号 ${targetId} を編集しました！`);
+                    showMessage(`投稿番号 ${actualTargetId} を編集しました！`);
                 }
             } catch (err) {
                 console.error(err);
@@ -2437,29 +2701,27 @@
 
         async function handleDeleteSubmit(e) {
             e.preventDefault();
+            if (isCurrentlyEditingAnyPost()) {
+                showMessage('⚠️ 投稿の編集中は削除操作を行えません。先に編集を完了またはキャンセルしてください。', true);
+                return;
+            }
             const deleteId = parseInt(document.getElementById('delete_id_input').value, 10);
             const deletePass = document.getElementById('delete_pass_input').value;
-            const idx = postsCache.findIndex(p => Number(p.id) === deleteId);
+            const target = postsCache.find(p => Number(p.id) === deleteId);
 
-            if (idx === -1) {
+            if (!target) {
                 showMessage('指定された投稿番号が見つかりません。', true);
                 return;
             }
 
-            const role = await verifyPostOrAdminPassword(deletePass, postsCache[idx].pass);
+            const role = await verifyPostOrAdminPassword(deletePass, target.pass);
             if (role) {
                 try {
-                    if (useFirebase) {
-                        await remove(ref(db, `bbs_posts/${deleteId}`));
-                    } else {
-                        postsCache.splice(idx, 1);
-                        saveLocalPosts(postsCache);
-                        render();
-                    }
+                    await removeAndReindexPosts(deleteId);
                     document.getElementById('delete_id_input').value = '';
                     document.getElementById('delete_pass_input').value = '';
                     const prefix = role === 'admin' ? '🛡️ 【管理者権限】' : '';
-                    showMessage(`${prefix}投稿番号 ${deleteId} を削除しました。`);
+                    showMessage(`${prefix}投稿番号 ${deleteId} を削除し、番号を前に詰めました。`);
                 } catch (err) {
                     console.error(err);
                     showMessage('削除中にエラーが発生しました。', true);
@@ -2482,45 +2744,9 @@
 
             const role = await verifyPostOrAdminPassword(editPass, target.pass);
             if (role) {
-                document.getElementById('edit_target_id').value = target.id;
-                document.getElementById('form_title').textContent = role === 'admin'
-                    ? `🛡️ 投稿 No.${target.id} を管理者編集中`
-                    : `✏️ 投稿 No.${target.id} を編集中`;
-                document.getElementById('cancel_edit_btn').style.display = 'inline-block';
-
-                document.getElementById('category_select').value = target.category || 'other';
-                filterOshiOptions();
-                state.selectedOshis = getPostOshiKeys(target);
-                state.selectedTags = getPostTags(target);
-                renderSelectedOshiChips();
-                renderPresetTagChips();
-
-                document.getElementById('name_input').value = target.name || '';
-                document.getElementById('reply_to_input').value = target.reply_to || '';
-                document.getElementById('comment_input').value = target.comment || '';
-                document.getElementById('is_spoiler_cb').checked = Boolean(target.is_spoiler);
-                document.getElementById('spoiler_label_input').value = target.spoiler_label || '';
-                toggleSpoilerLabelInput();
-
-                document.getElementById('pass_input').value = '';
-                document.getElementById('pass_input').placeholder = '新しいパスワード（変更しない場合は空欄）';
-                document.getElementById('remove_image_cb').checked = false;
-                clearSelectedImage();
-
-                if (target.image) {
-                    document.getElementById('existing_image_img').src = target.image;
-                    document.getElementById('existing_image_wrap').style.display = 'block';
-                } else {
-                    document.getElementById('existing_image_wrap').style.display = 'none';
-                }
-
                 document.getElementById('edit_id_input').value = '';
                 document.getElementById('edit_pass_input').value = '';
-                updateCooldownUI();
-                setPostFormOpen(true);
-                document.getElementById('post_form_wrapper').scrollIntoView({ behavior: 'smooth', block: 'start' });
-                const prefix = role === 'admin' ? '🛡️ 【管理者権限】' : '';
-                showMessage(`${prefix}投稿番号 ${editId} の編集モードです。上のフォームから内容を書き換えて送信してください。`);
+                populateEditForm(target, role === 'admin');
             } else {
                 showMessage('パスワードが一致しないか、管理者モードがOFFのため編集できません。', true);
             }
@@ -2534,12 +2760,6 @@
             }
             const pinId = parseInt(document.getElementById('pin_id_input').value, 10);
             const pinPass = document.getElementById('pin_pass_input').value;
-            const target = postsCache.find(p => Number(p.id) === pinId);
-
-            if (!target) {
-                showMessage('指定された投稿番号が見つかりません。', true);
-                return;
-            }
 
             const role = await verifyPostOrAdminPassword(pinPass, null);
             if (role !== 'admin') {
@@ -2547,24 +2767,9 @@
                 return;
             }
 
-            const nextPinned = !Boolean(target.pinned);
-            try {
-                if (useFirebase) {
-                    await update(ref(db, `bbs_posts/${pinId}`), { pinned: nextPinned });
-                } else {
-                    target.pinned = nextPinned;
-                    saveLocalPosts(postsCache);
-                    render();
-                }
-                document.getElementById('pin_id_input').value = '';
-                document.getElementById('pin_pass_input').value = '';
-                showMessage(nextPinned
-                    ? `📌 投稿 No.${pinId} を最上部にピン留め（固定表示）しました！`
-                    : `📌 投稿 No.${pinId} のピン留めを解除しました。`);
-            } catch (err) {
-                console.error(err);
-                showMessage('ピン留め更新中にエラーが発生しました。', true);
-            }
+            document.getElementById('pin_id_input').value = '';
+            document.getElementById('pin_pass_input').value = '';
+            await togglePinById(pinId);
         }
 
         async function toggleLike(id) {
@@ -2674,9 +2879,14 @@
         function selectCategory(cat) {
             state.cat = cat;
             state.page = 1;
-            if (cat !== 'all' && !document.getElementById('edit_target_id').value) {
+            if (cat !== 'all' && !isCurrentlyEditingAnyPost()) {
                 document.getElementById('category_select').value = cat;
                 filterOshiOptions();
+                if (state.selectedOshis.length > 0) {
+                    state.selectedOshis = [];
+                    renderSelectedOshiChips();
+                    saveDraft();
+                }
             }
             render();
         }
@@ -2752,6 +2962,23 @@
             render();
         }
 
+        function buildAdminCardActionsHtml(row) {
+            if (!isAdminMode) return '';
+            return `
+                <span class="admin-card-actions">
+                    <button type="button" class="admin-card-btn" data-admin-pin-id="${row.id}">
+                        ${row.pinned ? '📌 固定解除' : '📌 ピン留め'}
+                    </button>
+                    <button type="button" class="admin-card-btn" data-admin-edit-id="${row.id}">
+                        ✏️ 編集
+                    </button>
+                    <button type="button" class="admin-card-btn danger" data-admin-del-id="${row.id}">
+                        🗑️ 削除
+                    </button>
+                </span>
+            `;
+        }
+
         function buildPostBodyHtml(row) {
             const isSpoiler = Boolean(row.is_spoiler);
             const isReported = (Number(row.reports) || 0) >= REPORT_HIDE_THRESHOLD;
@@ -2807,6 +3034,9 @@
                 pinnedList.innerHTML = pinnedPosts.map(row => {
                     const catName = CATEGORIES[row.category] || 'その他';
                     const oshiBadges = buildOshiBadgesHtml(row);
+                    const adminPinnedActions = isAdminMode
+                        ? `<div class="post-footer"><div class="post-footer-right">${buildAdminCardActionsHtml(row)}</div></div>`
+                        : '';
                     return `
                         <div class="pickup-card" style="border-color:#91caff;">
                             <div class="post-header">
@@ -2818,6 +3048,7 @@
                                 <span class="jump-link" style="color:#1890ff;" data-jump-id="${row.id}">元の投稿へ移動 ↓</span>
                             </div>
                             ${buildPostBodyHtml(row)}
+                            ${adminPinnedActions}
                         </div>
                     `;
                 }).join('');
@@ -2852,6 +3083,7 @@
                             ${buildPostBodyHtml(row)}
                             <div class="post-footer">
                                 <div class="post-footer-right">
+                                    ${buildAdminCardActionsHtml(row)}
                                     <button type="button" class="like-btn ${likedClass}" data-like-id="${row.id}">
                                         🙏 尊い！ <span>${Number(row.likes) || 0}</span>
                                     </button>
@@ -3000,6 +3232,7 @@
                                     ${repliesBtnHtml}
                                 </div>
                                 <div class="post-footer-right">
+                                    ${buildAdminCardActionsHtml(row)}
                                     <button type="button" class="report-btn ${reportedClass}" data-report-id="${row.id}" title="不適切な投稿を通報">
                                         🚩 ${state.reportedIds.has(numId) ? '通報済' : '通報'}
                                     </button>
@@ -3083,7 +3316,7 @@
                     } else if (saveLocalPosts(data)) {
                         postsCache = data;
                         state.page = 1;
-                        render();
+                        handlePostsLoaded();
                         showMessage(`${data.length} 件の投稿データを読み込みました！`);
                     }
                 } catch (err) {
@@ -3137,6 +3370,10 @@
             document.getElementById('toggle_manage_form_btn').addEventListener('click', toggleManageForm);
             document.getElementById('category_select').addEventListener('change', () => {
                 filterOshiOptions();
+                if (state.selectedOshis.length > 0) {
+                    state.selectedOshis = [];
+                    renderSelectedOshiChips();
+                }
                 saveDraft();
             });
             document.getElementById('oshi_select').addEventListener('change', handleOshiSelectChange);
@@ -3187,6 +3424,21 @@
             });
 
             document.body.addEventListener('click', (e) => {
+                const adminPinBtn = e.target.closest('[data-admin-pin-id]');
+                if (adminPinBtn) {
+                    togglePinById(adminPinBtn.getAttribute('data-admin-pin-id'));
+                    return;
+                }
+                const adminEditBtn = e.target.closest('[data-admin-edit-id]');
+                if (adminEditBtn) {
+                    quickEditPostById(adminEditBtn.getAttribute('data-admin-edit-id'));
+                    return;
+                }
+                const adminDelBtn = e.target.closest('[data-admin-del-id]');
+                if (adminDelBtn) {
+                    deletePostById(adminDelBtn.getAttribute('data-admin-del-id'));
+                    return;
+                }
                 const toggleTagBtn = e.target.closest('[data-toggle-tag]');
                 if (toggleTagBtn) {
                     togglePresetTag(toggleTagBtn.getAttribute('data-toggle-tag'));
