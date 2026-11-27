@@ -1215,6 +1215,10 @@
             update,
             runTransaction
         } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-database.js";
+        import {
+            initializeAppCheck,
+            ReCaptchaEnterpriseProvider
+        } from "https://www.gstatic.com/firebasejs/13.4.0/firebase-app-check.js";
 
         // ============================================================
         // Firebase プロジェクト設定（lovelivebbs-90ccf）
@@ -1229,6 +1233,11 @@
             appId: "1:519653772130:web:9786ecdc11bfc4258d3a3b",
             measurementId: "G-X1WQFHC7LY"
         };
+
+        // ============================================================
+        // App Check（Fraud Defense / reCAPTCHA Enterprise）サイトキー
+        // ============================================================
+        const RECAPTCHA_ENTERPRISE_SITE_KEY = "6LdNlzQuAAAAALpxMezdmxuQBIrMx0E5ZJEHqJZm";
 
         // ============================================================
         // 管理者用マスターパスワード設定（K_5298）
@@ -1788,7 +1797,7 @@
             } catch (err) {
                 console.error(err);
                 const detail = err?.code ? `（${err.code}）` : '';
-                showMessage(`削除中にエラーが発生しました${detail}。Realtime Database のルール設定を確認してください。`, true);
+                showMessage(`削除中にエラーが発生しました${detail}。Realtime Database のルールやApp Check設定を確認してください。`, true);
             }
         }
 
@@ -2139,6 +2148,14 @@
 
             try {
                 const app = initializeApp(FIREBASE_CONFIG);
+
+                if (RECAPTCHA_ENTERPRISE_SITE_KEY && !RECAPTCHA_ENTERPRISE_SITE_KEY.startsWith('YOUR_')) {
+                    initializeAppCheck(app, {
+                        provider: new ReCaptchaEnterpriseProvider(RECAPTCHA_ENTERPRISE_SITE_KEY),
+                        isTokenAutoRefreshEnabled: true
+                    });
+                }
+
                 db = getDatabase(app);
                 useFirebase = true;
 
@@ -2758,7 +2775,7 @@
             } catch (err) {
                 console.error(err);
                 const detail = err?.code ? `（${err.code}）` : '';
-                showMessage(`送信中にエラーが発生しました${detail}。入力内容やRealtime Databaseのルールを確認してください。`, true);
+                showMessage(`送信中にエラーが発生しました${detail}。入力内容やRealtime Databaseのルール・App Check設定を確認してください。`, true);
             } finally {
                 updateCooldownUI();
             }
@@ -2790,7 +2807,7 @@
                 } catch (err) {
                     console.error(err);
                     const detail = err?.code ? `（${err.code}）` : '';
-                    showMessage(`削除中にエラーが発生しました${detail}。Realtime Database のルール設定を確認してください。`, true);
+                    showMessage(`削除中にエラーが発生しました${detail}。Realtime Database のルールやApp Check設定を確認してください。`, true);
                 }
             } else {
                 showMessage('パスワードが一致しないか、管理者モードがOFFのため削除できません。', true);
