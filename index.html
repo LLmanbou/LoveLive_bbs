@@ -126,7 +126,8 @@
             cursor: pointer;
             outline: none;
         }
-        body.dark-mode .theme-switcher select option {
+        body.dark-mode .theme-switcher select option,
+        body.dark-mode .theme-switcher select optgroup {
             background: #1f2128;
             color: #eceef2;
         }
@@ -1311,6 +1312,45 @@
             group_ikizulive: { name: 'イキヅライブ！ グループカラー', shortName: 'イキヅライブ推し', bg: '#ff7a00', color: '#ffffff' }
         };
 
+        // グループ別メンバーカラー表示順（「メンバー紹介（総合）」準拠）
+        const GROUP_MEMBER_ORDER = [
+            {
+                groupKey: 'muse',
+                label: "μ's（無印）",
+                keys: ['honoka', 'eli', 'kotori', 'umi', 'rin', 'maki', 'nozomi', 'hanayo', 'nico']
+            },
+            {
+                groupKey: 'aqours',
+                label: 'Aqours（サンシャイン!!）',
+                keys: ['chika', 'riko', 'kanan', 'dia', 'you', 'yoshiko', 'hanamaru', 'mari', 'ruby']
+            },
+            {
+                groupKey: 'niji',
+                label: '虹ヶ咲学園スクールアイドル同好会',
+                keys: ['ayumu', 'kasumi', 'shizuku', 'karin', 'ai', 'kanata', 'setsuna', 'emma', 'rina', 'shioriko', 'mia', 'lanzhu', 'yu']
+            },
+            {
+                groupKey: 'liella',
+                label: 'Liella!（スーパースター!!）',
+                keys: ['kanon', 'keke', 'chisato', 'sumire', 'ren', 'kinako', 'mei', 'shiki', 'natsumi', 'wien', 'tomari']
+            },
+            {
+                groupKey: 'hasu',
+                label: '蓮ノ空女学院スクールアイドルクラブ',
+                keys: ['kaho', 'sayaka', 'kozue', 'tsuzuri', 'rurino', 'megumi', 'ginko', 'kosuzu', 'hime', 'ceras', 'izumi', 'maika', 'aoi', 'mion']
+            },
+            {
+                groupKey: 'musical',
+                label: 'スクールアイドルミュージカル',
+                keys: ['rurika', 'yuzuha', 'yukino', 'hikaru', 'maya', 'anzu', 'misuzu', 'toa', 'rena', 'sayaka_m']
+            },
+            {
+                groupKey: 'ikizulive',
+                label: 'イキヅライブ！ LOVELIVE! BLUEBIRD',
+                keys: ['polka', 'mai', 'akira', 'hanabi', 'miracle', 'noriko', 'yukuri', 'aurora', 'midori', 'shion']
+            }
+        ];
+
         // メンバーカラー定義（「メンバー紹介（総合）」準拠）
         const MEMBERS = {
             none: { name: '選択なし（シリーズ全体箱推し・DD）', bg: '#e0e0e0', color: '#333333', group: 'all' },
@@ -2405,14 +2445,17 @@
                 .map(([k, info]) => `<option value="${k}" data-group="${info.group}">${escapeHtml(info.name)}</option>`)
                 .join('');
 
-            const memberOnlyOptionsHtml = Object.entries(MEMBERS)
-                .filter(([k, info]) => k !== 'none' && !info.isGroup)
-                .map(([k, info]) => `<option value="${k}">${escapeHtml(info.name)}</option>`)
-                .join('');
-
             const groupThemeOptionsHtml = Object.entries(GROUP_THEMES)
                 .map(([k, info]) => `<option value="${k}">${escapeHtml(info.name)}</option>`)
                 .join('');
+
+            const groupedMemberThemeOptionsHtml = GROUP_MEMBER_ORDER.map(grp => {
+                const itemsHtml = grp.keys
+                    .filter(k => MEMBERS[k] && !MEMBERS[k].isGroup)
+                    .map(k => `<option value="${k}">${escapeHtml(MEMBERS[k].name)}</option>`)
+                    .join('');
+                return `<optgroup label="${escapeHtml(grp.label)}">${itemsHtml}</optgroup>`;
+            }).join('');
 
             const searchGroupOshiHtml = Object.entries(MEMBERS)
                 .filter(([k, info]) => info.isGroup)
@@ -2434,7 +2477,7 @@
             themeOshiSelect.innerHTML =
                 '<option value="default">デフォルト（ラブライブピンク）</option>' +
                 `<optgroup label="🌈 グループカラー">${groupThemeOptionsHtml}</optgroup>` +
-                `<optgroup label="💖 メンバーカラー">${memberOnlyOptionsHtml}</optgroup>`;
+                groupedMemberThemeOptionsHtml;
         }
 
         function filterOshiOptions() {
