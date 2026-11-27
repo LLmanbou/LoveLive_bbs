@@ -1038,7 +1038,7 @@
 
             <div class="form-row" style="display: flex; gap: 10px;">
                 <div style="flex: 2;">
-                    <input type="text" id="name_input" placeholder="名前（例：海未推しライバー）" required>
+                    <input type="text" id="name_input" placeholder="名前（40文字以内・例：海未推しライバー）" maxlength="40" required>
                 </div>
                 <div style="flex: 1;">
                     <input type="number" id="reply_to_input" placeholder="リプ先番号（任意）">
@@ -1046,7 +1046,7 @@
             </div>
 
             <div class="form-row">
-                <textarea id="comment_input" placeholder="コメントを入力（改行も反映されます・入力内容は自動で下書き保存されます）" required></textarea>
+                <textarea id="comment_input" placeholder="コメントを入力（2,000文字以内・改行も反映されます・自動で下書き保存されます）" maxlength="2000" required></textarea>
             </div>
 
             <!-- 画像添付エリア -->
@@ -1084,7 +1084,7 @@
                     </button>
                 </div>
                 <div id="spoiler_label_box" class="spoiler-label-input">
-                    <input type="text" id="spoiler_label_input" placeholder="ネタバレの注意書きタイトル（例：〇〇ライブDay1セトリネタバレ注意！）">
+                    <input type="text" id="spoiler_label_input" placeholder="ネタバレの注意書きタイトル（例：〇〇ライブDay1セトリネタバレ注意！）" maxlength="100">
                 </div>
             </div>
 
@@ -1252,6 +1252,9 @@
         const PER_PAGE = 10;
         const MAX_OSHI_BADGES = 2;
         const REPORT_HIDE_THRESHOLD = 3;
+        const MAX_NAME_LEN = 40;
+        const MAX_COMMENT_LEN = 2000;
+        const MAX_IMAGE_DATA_URL_LEN = 900000;
 
         const PRESET_TAGS = [
             'ライブ感想',
@@ -1415,7 +1418,7 @@
             izumi: { name: '桂城 泉', bg: '#1ebecd', color: '#ffffff', group: 'hasu' },
             maika: { name: '錦上 マイカ', bg: '#ff9900', color: '#ffffff', group: 'hasu' },
             aoi: { name: '令沢 葵', bg: '#eefbc3', color: '#333333', group: 'hasu' },
-            mion: { name: '紫輪　みおん', bg: '#6461bf', color: '#ffffff', group: 'hasu' },
+            mion: { name: '紫輪 みおん', bg: '#6461bf', color: '#ffffff', group: 'hasu' },
             rurika: { name: '椿 ルリカ', bg: '#73b8e2', color: '#333333', group: 'musical' },
             yuzuha: { name: '皇 ユズハ', bg: '#efefef', color: '#333333', group: 'musical' },
             yukino: { name: '北条 ユキノ', bg: '#f58220', color: '#ffffff', group: 'musical' },
@@ -1464,7 +1467,7 @@
 
         function saveLastSeenId(maxId) {
             try {
-                localStorage.setItem(LAST_SEEN_ID_STORAGE_KEY, String(maxId));
+                localStorage.setItem(LAST_SEEN_ID_STORAGE_KEY, String(Math.max(0, Number(maxId) || 0)));
             } catch (e) {}
         }
 
@@ -1518,7 +1521,7 @@
                         ? `🛡️ 投稿 No.${matched.id} を管理者編集中`
                         : `✏️ 投稿 No.${matched.id} を編集中`;
                 }
-                showMessage(`🔄 他の投稿の削除により番号が繰り上がったため、編集対象を No.${matched.id} に自動追従しました。`);
+                showMessage(`🔄 番号振り直しにより編集対象を No.${matched.id} に自動追従しました。`);
             }
         }
 
@@ -1541,8 +1544,8 @@
             }
             if (delHint) {
                 delHint.textContent = isAdminMode
-                    ? '※ 管理者モードON：投稿パスワードまたは管理者マスターパスで削除可（カード上からも削除可）。'
-                    : '※ 投稿時のパスワードで削除可（管理者マスターパスは管理者モードON時のみ有効）。';
+                    ? '※ 管理者モードON：投稿パスワードまたは管理者マスターパスで削除・番号振り直し可。'
+                    : '※ 投稿時のパスワードで削除・番号振り直し可（管理者マスターパスは管理者モードON時のみ有効）。';
             }
             if (editHint) {
                 editHint.textContent = isAdminMode
@@ -1605,6 +1608,7 @@
             }
         }
 
+        // 投稿削除後に残った投稿の番号を1から振り直す
         async function removeAndReindexPosts(deleteId) {
             const numId = Number(deleteId);
             const remaining = postsCache
@@ -1627,7 +1631,13 @@
                 const updatedPost = {
                     ...post,
                     id: newId,
-                    reply_to: nextReplyTo
+                    reply_to: nextReplyTo,
+                    likes: Math.max(0, Number(post.likes) || 0),
+                    reports: Math.max(0, Number(post.reports) || 0),
+                    pinned: Boolean(post.pinned),
+                    is_spoiler: Boolean(post.is_spoiler),
+                    spoiler_label: String(post.spoiler_label || '').slice(0, 100),
+                    image: post.image && String(post.image).length <= MAX_IMAGE_DATA_URL_LEN ? post.image : null
                 };
                 newPostsMap[newId] = updatedPost;
                 return updatedPost;
@@ -1768,17 +1778,17 @@
                 showMessage('指定された投稿番号が見つかりません。', true);
                 return;
             }
-            if (!confirm(`🛡️ 【管理者権限】投稿 No.${numId} を完全に削除し、後続の番号を前に詰めますか？`)) {
+            if (!confirm(`🛡️ 【管理者権限】投稿 No.${numId} を削除し、番号を1から振り直しますか？`)) {
                 return;
             }
 
             try {
                 await removeAndReindexPosts(numId);
-                showMessage(`🛡️ 【管理者権限】投稿番号 ${numId} を削除し、番号を前に詰めました。`);
+                showMessage(`🛡️ 【管理者権限】投稿番号 ${numId} を削除し、番号を振り直しました。`);
             } catch (err) {
                 console.error(err);
                 const detail = err?.code ? `（${err.code}）` : '';
-                showMessage(`削除中にエラーが発生しました${detail}。Firebase Realtime Database の書き込みルールを確認してください。`, true);
+                showMessage(`削除中にエラーが発生しました${detail}。Realtime Database のルール設定を確認してください。`, true);
             }
         }
 
@@ -1807,7 +1817,7 @@
 
         function getPostTags(post) {
             if (Array.isArray(post?.tags)) {
-                return post.tags.filter(t => typeof t === 'string' && t.trim() !== '');
+                return post.tags.filter(t => typeof t === 'string' && PRESET_TAGS.includes(t));
             }
             return [];
         }
@@ -1851,6 +1861,7 @@
         }
 
         function togglePresetTag(tag) {
+            if (!PRESET_TAGS.includes(tag)) return;
             if (state.selectedTags.includes(tag)) {
                 state.selectedTags = state.selectedTags.filter(t => t !== tag);
             } else {
@@ -1966,9 +1977,9 @@
                             document.getElementById('category_select').value = d.category;
                             filterOshiOptions();
                         }
-                        if (d.name) document.getElementById('name_input').value = d.name;
+                        if (d.name) document.getElementById('name_input').value = String(d.name).slice(0, MAX_NAME_LEN);
                         if (d.replyTo) document.getElementById('reply_to_input').value = d.replyTo;
-                        if (d.comment) document.getElementById('comment_input').value = d.comment;
+                        if (d.comment) document.getElementById('comment_input').value = String(d.comment).slice(0, MAX_COMMENT_LEN);
                         if (Array.isArray(d.oshis)) {
                             state.selectedOshis = d.oshis.filter(k => MEMBERS[k] && k !== 'none').slice(0, MAX_OSHI_BADGES);
                         }
@@ -1976,7 +1987,7 @@
                             state.selectedTags = d.tags.filter(t => PRESET_TAGS.includes(t));
                         }
                         document.getElementById('is_spoiler_cb').checked = Boolean(d.isSpoiler);
-                        document.getElementById('spoiler_label_input').value = d.spoilerLabel || '';
+                        document.getElementById('spoiler_label_input').value = String(d.spoilerLabel || '').slice(0, 100);
                         toggleSpoilerLabelInput();
                         renderSelectedOshiChips();
                         renderPresetTagChips();
@@ -1994,7 +2005,7 @@
                 renderPresetTagChips();
                 return;
             }
-            if (prof.name) document.getElementById('name_input').value = prof.name;
+            if (prof.name) document.getElementById('name_input').value = String(prof.name).slice(0, MAX_NAME_LEN);
             if (prof.category && CATEGORIES[prof.category] && prof.category !== 'all') {
                 document.getElementById('category_select').value = prof.category;
                 filterOshiOptions();
@@ -2537,6 +2548,13 @@
                     canvas.height = h;
                     canvas.getContext('2d').drawImage(tempImg, 0, 0, w, h);
                     const compressed = canvas.toDataURL('image/jpeg', 0.78);
+                    if (compressed.length > MAX_IMAGE_DATA_URL_LEN) {
+                        state.selectedImageDataUrl = null;
+                        wrap.style.display = 'none';
+                        input.value = '';
+                        showMessage('画像サイズが大きすぎるため添付できません。別の画像をお試しください。', true);
+                        return;
+                    }
                     state.selectedImageDataUrl = compressed;
                     img.src = compressed;
                     wrap.style.display = 'flex';
@@ -2611,21 +2629,31 @@
                 }
             }
 
-            const category = document.getElementById('category_select').value;
+            const rawCategory = document.getElementById('category_select').value;
+            const category = CATEGORIES[rawCategory] && rawCategory !== 'all' ? rawCategory : 'other';
             const oshisToSave = state.selectedOshis.slice(0, MAX_OSHI_BADGES);
             const primaryOshi = oshisToSave[0] || 'none';
             const tagsToSave = [...state.selectedTags];
             const name = document.getElementById('name_input').value.trim();
             const replyRaw = document.getElementById('reply_to_input').value.trim();
-            const replyTo = replyRaw !== '' ? parseInt(replyRaw, 10) : null;
+            const parsedReply = replyRaw !== '' ? parseInt(replyRaw, 10) : null;
+            const replyTo = (parsedReply !== null && Number.isFinite(parsedReply) && parsedReply > 0) ? parsedReply : null;
             const comment = document.getElementById('comment_input').value.trim();
             const isSpoiler = document.getElementById('is_spoiler_cb').checked;
-            const spoilerLabel = document.getElementById('spoiler_label_input').value.trim();
+            const spoilerLabel = document.getElementById('spoiler_label_input').value.trim().slice(0, 100);
             const rawPass = document.getElementById('pass_input').value;
             const removeImage = document.getElementById('remove_image_cb').checked;
 
             if (!name || !comment) {
                 showMessage('名前とコメントは必須です。', true);
+                return;
+            }
+            if (name.length > MAX_NAME_LEN) {
+                showMessage(`名前は ${MAX_NAME_LEN} 文字以内で入力してください。`, true);
+                return;
+            }
+            if (comment.length > MAX_COMMENT_LEN) {
+                showMessage(`コメントは ${MAX_COMMENT_LEN} 文字以内で入力してください。`, true);
                 return;
             }
 
@@ -2729,7 +2757,8 @@
                 }
             } catch (err) {
                 console.error(err);
-                showMessage('通信エラーが発生しました。Firebaseのルール設定またはdatabaseURLを確認してください。', true);
+                const detail = err?.code ? `（${err.code}）` : '';
+                showMessage(`送信中にエラーが発生しました${detail}。入力内容やRealtime Databaseのルールを確認してください。`, true);
             } finally {
                 updateCooldownUI();
             }
@@ -2757,11 +2786,11 @@
                     document.getElementById('delete_id_input').value = '';
                     document.getElementById('delete_pass_input').value = '';
                     const prefix = role === 'admin' ? '🛡️ 【管理者権限】' : '';
-                    showMessage(`${prefix}投稿番号 ${deleteId} を削除し、番号を前に詰めました。`);
+                    showMessage(`${prefix}投稿番号 ${deleteId} を削除し、番号を振り直しました。`);
                 } catch (err) {
                     console.error(err);
                     const detail = err?.code ? `（${err.code}）` : '';
-                    showMessage(`削除中にエラーが発生しました${detail}。Firebase Realtime Database の書き込みルールを確認してください。`, true);
+                    showMessage(`削除中にエラーが発生しました${detail}。Realtime Database のルール設定を確認してください。`, true);
                 }
             } else {
                 showMessage('パスワードが一致しないか、管理者モードがOFFのため削除できません。', true);
@@ -3336,25 +3365,34 @@
                     const data = JSON.parse(e.target.result);
                     if (!Array.isArray(data)) throw new Error('Invalid format');
 
+                    const normalized = data
+                        .filter(Boolean)
+                        .sort((a, b) => Number(a.id) - Number(b.id))
+                        .map((item, idx) => ({
+                            ...item,
+                            id: idx + 1,
+                            name: String(item.name || '匿名ライバー').slice(0, MAX_NAME_LEN),
+                            comment: String(item.comment || '').slice(0, MAX_COMMENT_LEN),
+                            date: String(item.date || nowFormatted()),
+                            likes: Math.max(0, Number(item.likes) || 0),
+                            reports: Math.max(0, Number(item.reports) || 0),
+                            image: item.image && String(item.image).length <= MAX_IMAGE_DATA_URL_LEN ? item.image : null
+                        }));
+
                     if (useFirebase) {
                         const postsMap = {};
-                        let maxId = 0;
-                        for (const item of data) {
-                            if (item && item.id != null) {
-                                const idNum = Number(item.id);
-                                postsMap[idNum] = item;
-                                if (idNum > maxId) maxId = idNum;
-                            }
+                        for (const item of normalized) {
+                            postsMap[item.id] = item;
                         }
-                        await set(ref(db, 'bbs_posts'), postsMap);
-                        await set(ref(db, 'bbs_meta/last_id'), maxId);
+                        await set(ref(db, 'bbs_posts'), normalized.length > 0 ? postsMap : null);
+                        await set(ref(db, 'bbs_meta/last_id'), normalized.length);
                         state.page = 1;
-                        showMessage(`${Object.keys(postsMap).length} 件の投稿データをFirebaseに同期復元しました！`);
-                    } else if (saveLocalPosts(data)) {
-                        postsCache = data;
+                        showMessage(`${normalized.length} 件の投稿データを番号を揃えてFirebaseに同期復元しました！`);
+                    } else if (saveLocalPosts(normalized)) {
+                        postsCache = normalized;
                         state.page = 1;
                         handlePostsLoaded();
-                        showMessage(`${data.length} 件の投稿データを読み込みました！`);
+                        showMessage(`${normalized.length} 件の投稿データを読み込みました！`);
                     }
                 } catch (err) {
                     alert('JSONファイルの形式が正しくありません。');
