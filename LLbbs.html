@@ -6,6 +6,7 @@
     <title>ラブライバー集会場！シリーズ別掲示板（リアルタイム同期・PWA完全版）</title>
     <!-- PWA（ホーム画面アプリ化・全画面起動）用メタタグ -->
     <meta id="meta_theme_color" name="theme-color" content="#e4007f">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="ラブライバー掲示板">
@@ -1312,7 +1313,6 @@
             group_ikizulive: { name: 'イキヅライブ！ グループカラー', shortName: 'イキヅライブ推し', bg: '#ff7a00', color: '#ffffff' }
         };
 
-        // グループ別メンバーカラー表示順（「メンバー紹介（総合）」準拠）
         const GROUP_MEMBER_ORDER = [
             {
                 groupKey: 'muse',
@@ -1351,7 +1351,6 @@
             }
         ];
 
-        // メンバーカラー定義（「メンバー紹介（総合）」準拠）
         const MEMBERS = {
             none: { name: '選択なし（シリーズ全体箱推し・DD）', bg: '#e0e0e0', color: '#333333', group: 'all' },
             hako_muse: { name: "μ's箱推し", badgeLabel: "μ's箱推し", bg: '#e4007f', color: '#ffffff', group: 'muse', isGroup: true },
@@ -1361,7 +1360,6 @@
             hako_hasu: { name: '蓮ノ空箱推し', badgeLabel: '蓮ノ空箱推し', bg: '#e84a7f', color: '#ffffff', group: 'hasu', isGroup: true },
             hako_musical: { name: 'ミュージカル箱推し', badgeLabel: 'ミュージカル箱推し', bg: '#e91e63', color: '#ffffff', group: 'musical', isGroup: true },
             hako_ikizulive: { name: 'イキヅライブ箱推し', badgeLabel: 'イキヅライブ箱推し', bg: '#ff7a00', color: '#ffffff', group: 'ikizulive', isGroup: true },
-            // μ's（メンバー紹介（総合））
             honoka: { name: '高坂 穂乃果', bg: '#f38500', color: '#ffffff', group: 'muse' },
             eli: { name: '絢瀬 絵里', bg: '#7aeeff', color: '#333333', group: 'muse' },
             kotori: { name: '南 ことり', bg: '#cebfbf', color: '#333333', group: 'muse' },
@@ -1371,7 +1369,6 @@
             nozomi: { name: '東條 希', bg: '#c455f6', color: '#ffffff', group: 'muse' },
             hanayo: { name: '小泉 花陽', bg: '#6ae673', color: '#333333', group: 'muse' },
             nico: { name: '矢澤 にこ', bg: '#ff4f91', color: '#ffffff', group: 'muse' },
-            // Aqours（メンバー紹介（総合））
             chika: { name: '高海 千歌', bg: '#ff9547', color: '#ffffff', group: 'aqours' },
             riko: { name: '桜内 梨子', bg: '#ff9eac', color: '#333333', group: 'aqours' },
             kanan: { name: '松浦 果南', bg: '#27c1b7', color: '#333333', group: 'aqours' },
@@ -1381,7 +1378,6 @@
             hanamaru: { name: '国木田 花丸', bg: '#ffd010', color: '#333333', group: 'aqours' },
             mari: { name: '小原 鞠莉', bg: '#c252c6', color: '#ffffff', group: 'aqours' },
             ruby: { name: '黒澤 ルビィ', bg: '#ff6fbe', color: '#ffffff', group: 'aqours' },
-            // 虹ヶ咲（メンバー紹介（総合））
             ayumu: { name: '上原 歩夢', bg: '#ed7d95', color: '#ffffff', group: 'niji' },
             kasumi: { name: '中須 かすみ', bg: '#e7d600', color: '#333333', group: 'niji' },
             shizuku: { name: '桜坂 しずく', bg: '#01b7ed', color: '#ffffff', group: 'niji' },
@@ -1395,7 +1391,6 @@
             mia: { name: 'ミア・テイラー', bg: '#a99e98', color: '#ffffff', group: 'niji' },
             lanzhu: { name: '鐘 嵐珠', bg: '#f8c8c4', color: '#333333', group: 'niji' },
             yu: { name: '高咲 侑', bg: '#1d1d1d', color: '#ffffff', group: 'niji' },
-            // Liella!（メンバー紹介（総合））
             kanon: { name: '澁谷 かのん', bg: '#ff7f27', color: '#ffffff', group: 'liella' },
             keke: { name: '唐 可可', bg: '#a0fff9', color: '#333333', group: 'liella' },
             chisato: { name: '嵐 千砂都', bg: '#ff6e90', color: '#ffffff', group: 'liella' },
@@ -1407,7 +1402,6 @@
             natsumi: { name: '鬼塚 夏美', bg: '#ff51c4', color: '#ffffff', group: 'liella' },
             wien: { name: 'ウィーン・マルガレーテ', bg: '#e49dfd', color: '#333333', group: 'liella' },
             tomari: { name: '鬼塚 冬毬', bg: '#76dddf', color: '#333333', group: 'liella' },
-            // 蓮ノ空
             kaho: { name: '日野下 花帆', bg: '#f8b500', color: '#ffffff', group: 'hasu' },
             sayaka: { name: '村野 さやか', bg: '#5383c3', color: '#ffffff', group: 'hasu' },
             kozue: { name: '乙宗 梢', bg: '#68be8d', color: '#ffffff', group: 'hasu' },
@@ -1421,8 +1415,7 @@
             izumi: { name: '桂城 泉', bg: '#1ebecd', color: '#ffffff', group: 'hasu' },
             maika: { name: '錦上 マイカ', bg: '#ff9900', color: '#ffffff', group: 'hasu' },
             aoi: { name: '令沢 葵', bg: '#eefbc3', color: '#333333', group: 'hasu' },
-            mion: { name: '紫輪 みおん', bg: '#6461bf', color: '#ffffff', group: 'hasu' },
-            // スクールアイドルミュージカル（メンバー紹介（総合））
+            mion: { name: '紫輪　みおん', bg: '#6461bf', color: '#ffffff', group: 'hasu' },
             rurika: { name: '椿 ルリカ', bg: '#73b8e2', color: '#333333', group: 'musical' },
             yuzuha: { name: '皇 ユズハ', bg: '#efefef', color: '#333333', group: 'musical' },
             yukino: { name: '北条 ユキノ', bg: '#f58220', color: '#ffffff', group: 'musical' },
@@ -1433,7 +1426,6 @@
             toa: { name: '来栖 トア', bg: '#ff8c90', color: '#333333', group: 'musical' },
             rena: { name: '鈴賀 レナ', bg: '#abc900', color: '#333333', group: 'musical' },
             sayaka_m: { name: '晴風 サヤカ', bg: '#ffee50', color: '#333333', group: 'musical' },
-            // イキヅライブ！
             polka: { name: '高橋 ポルカ', bg: '#ffff66', color: '#333333', group: 'ikizulive' },
             mai: { name: '麻布 麻衣', bg: '#4d93d9', color: '#ffffff', group: 'ikizulive' },
             akira: { name: '五桐 玲', bg: '#b5e6a2', color: '#333333', group: 'ikizulive' },
@@ -1785,7 +1777,8 @@
                 showMessage(`🛡️ 【管理者権限】投稿番号 ${numId} を削除し、番号を前に詰めました。`);
             } catch (err) {
                 console.error(err);
-                showMessage('削除中にエラーが発生しました。', true);
+                const detail = err?.code ? `（${err.code}）` : '';
+                showMessage(`削除中にエラーが発生しました${detail}。Firebase Realtime Database の書き込みルールを確認してください。`, true);
             }
         }
 
@@ -2767,7 +2760,8 @@
                     showMessage(`${prefix}投稿番号 ${deleteId} を削除し、番号を前に詰めました。`);
                 } catch (err) {
                     console.error(err);
-                    showMessage('削除中にエラーが発生しました。', true);
+                    const detail = err?.code ? `（${err.code}）` : '';
+                    showMessage(`削除中にエラーが発生しました${detail}。Firebase Realtime Database の書き込みルールを確認してください。`, true);
                 }
             } else {
                 showMessage('パスワードが一致しないか、管理者モードがOFFのため削除できません。', true);
